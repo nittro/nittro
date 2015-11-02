@@ -16,6 +16,7 @@
 /*! @include file="Forms/Locator.js" */
 /*! @include file="DI/Container.js" */
 /*! @include file="DI/Context.js" */
+/*! @include file="Application/Storage.js" */
 /*! @include file="Widgets/DialogBase.js" */
 /*! @include file="Widgets/Dialog.js" */
 /*! @include file="Widgets/Confirm.js" */
