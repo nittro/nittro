@@ -75,8 +75,9 @@ _context.invoke('Nette.Ajax.Transport', function (Response, FormData, Url) {
                 cleanup();
 
                 if (xhr.status === 200) {
-                    request.trigger('success', xhr);
-                    fulfill(self._createResponse(xhr));
+                    var response = self._createResponse(xhr);
+                    request.trigger('success', response);
+                    fulfill(response);
 
                 } else {
                     var err = self._createError(xhr, evt);
