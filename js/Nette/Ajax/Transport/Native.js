@@ -75,17 +75,22 @@ _context.invoke('Nette.Ajax.Transport', function (Response, FormData, Url) {
                 cleanup();
 
                 if (xhr.status === 200) {
+                    request.trigger('success', xhr);
                     fulfill(self._createResponse(xhr));
 
                 } else {
-                    reject(self._createError(xhr, evt));
+                    var err = self._createError(xhr, evt);
+                    request.trigger('error', err);
+                    reject(err);
 
                 }
             };
 
             var onError = function (evt) {
                 cleanup();
-                reject(self._createError(xhr, evt));
+                var err = self._createError(xhr, evt);
+                request.trigger('error', err);
+                reject(err);
 
             };
 
