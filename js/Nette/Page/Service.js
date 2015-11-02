@@ -24,6 +24,7 @@ _context.invoke('Nette.Page', function (DOM, Url, Snippet) {
             if (!this._.setup) {
                 this._.setup = true;
                 this._setup(this._.snippets);
+                this.trigger('update');
 
             }
         },
