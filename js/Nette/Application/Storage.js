@@ -1,4 +1,4 @@
-_context.invoke('Nette.Application', function(window, JSON) {
+_context.invoke('Nette.Application', function() {
 
     var Storage = _context.extend(function(namespace, persistent) {
         this._.persistent = persistent;
