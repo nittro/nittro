@@ -1,4 +1,4 @@
-_context.invoke('Nette.Ajax', function (Url, undefined) {
+_context.invoke('Nette.Ajax', function (Url, FormData, undefined) {
 
     var Request = _context.extend('Nette.Object', function(url, method, data) {
         this._ = {
