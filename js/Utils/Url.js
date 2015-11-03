@@ -248,15 +248,15 @@ _context.invoke('Utils', function(Strings, undefined) {
         return this.compare(Url.fromCurrent()) <= Url.PART.PORT;
 
     };
-    
+
     Url.prototype.compare = function(to) {
         if (!(to instanceof Url)) {
             to = Url.from(to);
-            
+
         }
-        
+
         var r = 0;
-        
+
         this.getProtocol() !== to.getProtocol() && (r |= Url.PART.PROTOCOL);
         this.getUsername() !== to.getUsername() && (r |= Url.PART.USERNAME);
         this.getPassword() !== to.getPassword() && (r |= Url.PART.PASSWORD);
@@ -265,9 +265,9 @@ _context.invoke('Utils', function(Strings, undefined) {
         this.getPath() !== to.getPath() && (r |= Url.PART.PATH);
         this.getQuery() !== to.getQuery() && (r |= Url.PART.QUERY);
         this.getHash() !== to.getHash() && (r |= Url.PART.HASH);
-        
+
         return r;
-        
+
     };
 
     /**
@@ -349,12 +349,25 @@ _context.invoke('Utils', function(Strings, undefined) {
     Url.buildQuery = function(p) {
         var q = [], n, en = encodeURIComponent;
 
+        var val = function (v) {
+            if (v === undefined) {
+                return null;
+
+            } else if (typeof v === 'boolean') {
+                return v ? 1 : 0;
+
+            } else {
+                return en('' + v);
+
+            }
+        };
+
         var flatten = function(a, n) {
             var r = [], i;
 
             if (Array.isArray(a)) {
                 for (i = 0; i < a.length; i++) {
-                    r.push(en(n + '[]') + '=' + en(a[i]));
+                    r.push(en(n + '[]') + '=' + val(a[i]));
 
                 }
             } else {
@@ -363,13 +376,13 @@ _context.invoke('Utils', function(Strings, undefined) {
                         r.push(flatten(a[i], n + '[' + i + ']'));
 
                     } else {
-                        r.push(en(n + '[' + i + ']') + '=' + en(a[i]));
+                        r.push(en(n + '[' + i + ']') + '=' + val(a[i]));
 
                     }
                 }
             }
 
-            return r.filter(function(v) { return !!v }).join('&');
+            return r.filter(function(v) { return v !== null }).join('&');
 
         };
 
@@ -381,12 +394,12 @@ _context.invoke('Utils', function(Strings, undefined) {
                 q.push(flatten(p[n], n));
 
             } else {
-                q.push(en(n) + '=' + en(p[n]));
+                q.push(en(n) + '=' + val(p[n]));
 
             }
         }
 
-        return q.filter(function(v) { return !!v; }).join('&');
+        return q.filter(function(v) { return v !== null; }).join('&');
 
     };
 
