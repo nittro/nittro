@@ -233,6 +233,12 @@ _context.invoke('Nette.Forms', function (DOM, Arrays, DateTime, FormData, Vendor
         },
 
         _handleSubmit: function (evt) {
+            if (this.trigger('submit').isDefaultPrevented()) {
+                evt.preventDefault();
+                return;
+
+            }
+
             if (!this.validate()) {
                 evt.preventDefault();
 
