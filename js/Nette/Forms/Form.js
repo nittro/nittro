@@ -260,6 +260,9 @@ _context.invoke('Nette.Forms', function (DOM, Arrays, DateTime, FormData, Vendor
                     }
                 }
             }
+
+            this.trigger('reset');
+
         }
     });
 
