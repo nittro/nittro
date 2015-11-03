@@ -13,7 +13,7 @@ _context.invoke('Nette.Forms', function (DOM, Arrays) {
 
     VendorForms.addEvent = DOM.addListener;
 
-    VendorForms.validators.mimeType = function(control, elem, arg, val) {
+    VendorForms.validators.mimeType = function(elem, arg, val) {
         if (!Arrays.isArray(arg)) {
             arg = arg.trim().split(/\s*,\s*/);
 
