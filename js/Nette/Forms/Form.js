@@ -76,7 +76,7 @@ _context.invoke('Nette.Forms', function (DOM, Arrays, FormData, Vendor, undefine
                 }
 
                 if (value === undefined) {
-                    if (reset) {
+                    if (reset && !DOM.hasClass(elem, 'no-reset')) {
                         value = null;
 
                     } else {
