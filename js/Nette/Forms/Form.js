@@ -33,7 +33,13 @@ _context.invoke('Nette.Forms', function (DOM, Arrays, DateTime, FormData, Vendor
         },
 
         validate: function () {
-            return Vendor.validateForm(this._.form);
+            if (!Vendor.validateForm(this._.form)) {
+                return false;
+
+            }
+
+            var evt = this.trigger('validate');
+            return !evt.isDefaultPrevented();
 
         },
 
