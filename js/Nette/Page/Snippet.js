@@ -90,7 +90,7 @@ _context.invoke('Nette.Page', function (DOM) {
 
                 });
 
-                this._.handlers[this._.state].splice();
+                this._.handlers[this._.state].splice(0, this._.handlers[this._.state].length);
 
             }
 
