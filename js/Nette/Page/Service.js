@@ -15,17 +15,27 @@ _context.invoke('Nette.Page', function (DOM, Url, Snippet) {
 
         DOM.addListener(document, 'click', this._handleClick.bind(this));
         DOM.addListener(document, 'submit', this._handleSubmit.bind(this));
-        DOM.addListener(document, 'DOMContentLoaded', this._handleReady.bind(this));
         DOM.addListener(window, 'popstate', this._handleState.bind(this));
         this.on('error:default', this._showError.bind(this));
 
+        this._checkReady();
+
     }, {
-        _handleReady: function () {
+        _checkReady: function () {
+            if (document.readyState === 'loading') {
+                DOM.addListener(document, 'readystatechange', this._checkReady.bind(this));
+                return;
+
+            }
+
             if (!this._.setup) {
                 this._.setup = true;
-                this._setup(this._.snippets);
-                this.trigger('update');
 
+                window.setTimeout(function () {
+                    this._setup(this._.snippets);
+                    this.trigger('update');
+
+                }.bind(this), 1);
             }
         },
 
