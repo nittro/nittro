@@ -45,11 +45,6 @@ _context.invoke('Nette.Page', function (DOM, Url, Snippet) {
 
             }
 
-            if (this._.request) {
-                this._.request.abort();
-
-            }
-
             var btn = DOM.closest(evt.target, 'button') || DOM.closest(evt.target, 'input'),
                 frm;
 
@@ -72,18 +67,27 @@ _context.invoke('Nette.Page', function (DOM, Url, Snippet) {
 
             }
 
-            var request = this._.ajax.createRequest(url);
+            this.openLink(link, evt);
 
-            try {
-                this._dispatchRequest(request, link, true);
+        },
 
-            } catch (e) {
-                return;
+        openLink: function (link, evt) {
+            if (this._.request) {
+                this._.request.abort();
 
             }
 
-            evt.preventDefault();
+            var request = this._.ajax.createRequest(link.href);
 
+            try {
+                var p = this._dispatchRequest(request, link, true);
+                evt && evt.preventDefault();
+                return p;
+
+            } catch (e) {
+                return Promise.reject(e);
+
+            }
         },
 
         _handleSubmit: function (evt) {
@@ -92,32 +96,41 @@ _context.invoke('Nette.Page', function (DOM, Url, Snippet) {
 
             }
 
-            if (this._.request) {
-                this._.request.abort();
-
-            }
-
             if (!(evt.target instanceof HTMLFormElement) || !DOM.hasClass(evt.target, 'ajax')) {
                 return;
 
             }
 
-            var frm = this._.formLocator.getForm(evt.target),
-                data = frm.serialize(),
-                request = this._.ajax.createRequest(evt.target.action, evt.target.method, data);
+            this.sendForm(evt.target, evt);
 
-            try {
-                this._dispatchRequest(request, evt.target, true).then(function () {
-                    frm.reset();
+        },
 
-                });
-            } catch (e) {
-                return;
+        sendForm: function (form, evt) {
+            if (this._.request) {
+                this._.request.abort();
 
             }
 
-            evt.preventDefault();
+            var frm = this._.formLocator.getForm(form),
+                data = frm.serialize(),
+                request = this._.ajax.createRequest(form.action, form.method, data);
 
+            try {
+                var p = this._dispatchRequest(request, form, true);
+
+                p.then(function () {
+                    frm.reset();
+
+                });
+
+                evt && evt.preventDefault();
+
+                return p;
+
+            } catch (e) {
+                return Promise.reject(e);
+
+            }
         },
 
         _handleState: function () {
