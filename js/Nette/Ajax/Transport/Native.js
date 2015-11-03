@@ -48,10 +48,9 @@ _context.invoke('Nette.Ajax.Transport', function (Response, FormData, Url) {
 
                 xhr.open(request.getMethod(), request.getUrl().toAbsolute(), true);
 
+                var data = self._formatData(request, xhr);
                 self._addHeaders(request, xhr);
-
-                var data = request.getData();
-                xhr.send(self._formatData(request, data));
+                xhr.send(data);
 
             });
         },
@@ -159,7 +158,9 @@ _context.invoke('Nette.Ajax.Transport', function (Response, FormData, Url) {
             }
         },
 
-        _formatData: function (request, data) {
+        _formatData: function (request, xhr) {
+            var data = request.getData();
+
             if (data instanceof FormData) {
                 data = data.exportData(request.isGet() || request.isMethod('HEAD'));
 
@@ -171,11 +172,13 @@ _context.invoke('Nette.Ajax.Transport', function (Response, FormData, Url) {
 
                     });
 
-                    data = tmp;
+                    data = Url.buildQuery(tmp);
+                    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
 
                 }
             } else {
                 data = Url.buildQuery(data);
+                xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
 
             }
 
@@ -187,7 +190,7 @@ _context.invoke('Nette.Ajax.Transport', function (Response, FormData, Url) {
             var payload,
                 headers = {};
 
-            (xhr.getAllResponseHeaders() || '').split(/\r\n/g).forEach(function(header) {
+            (xhr.getAllResponseHeaders() || '').trim().split(/\r\n/g).forEach(function(header) {
                 if (header && !header.match(/^\s+$/)) {
                     header = header.match(/^\s*([^:]+):\s*(.+)\s*$/);
                     headers[header[1].toLowerCase()] = header[2];

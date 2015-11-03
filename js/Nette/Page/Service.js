@@ -460,7 +460,7 @@ _context.invoke('Nette.Page', function (DOM, Url, Snippet) {
                 'class': 'transition-add'
             });
 
-            if (elem.length > 0) {
+            if (elem.length > 1) {
                 DOM.addClass.apply(null, elem);
 
             }

@@ -6,16 +6,28 @@ _context.invoke('Utils', function (Arrays, Strings, undefined) {
         if (Arrays.isArray(args[0])) {
             for (var i = 0, elems = args[0], ret = []; i < elems.length; i++) {
                 args[0] = getElem(elems[i]);
-                ret.push(callback.apply(null, args));
 
+                if (args[0]) {
+                    ret.push(callback.apply(null, args));
+
+                } else {
+                    ret.push(args[0]);
+
+                }
             }
 
             return ret;
 
         } else {
             args[0] = getElem(args[0]);
-            return callback.apply(null, args);
 
+            if (args[0]) {
+                return callback.apply(null, args);
+
+            } else {
+                return args[0];
+
+            }
         }
     };
 
