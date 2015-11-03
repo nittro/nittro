@@ -44,6 +44,7 @@ _context.invoke('Nette.Forms', function (DOM, Arrays, FormData, Vendor, undefine
             for (i = 0; i < this._.form.elements.length; i++) {
                 elem = this._.form.elements.item(i);
                 name = elem.name;
+                value = undefined;
 
                 if (!name || names.indexOf(name) > -1 || elem.tagName.toLowerCase() === 'button' || elem.type in {'submit':1, 'reset':1, 'button':1}) {
                     continue;
