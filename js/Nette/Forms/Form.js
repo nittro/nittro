@@ -1,4 +1,4 @@
-_context.invoke('Nette.Forms', function (DOM, Arrays, FormData, Vendor, undefined) {
+_context.invoke('Nette.Forms', function (DOM, Arrays, DateTime, FormData, Vendor, undefined) {
 
     var Form = _context.extend('Nette.Object', function (form) {
         Form.Super.call(this);
@@ -132,8 +132,14 @@ _context.invoke('Nette.Forms', function (DOM, Arrays, FormData, Vendor, undefine
             } else if (elem.type === 'checkbox') {
                 elem.checked = Arrays.isArray(value) ? value.indexOf(elem.value) > -1 : !!value;
 
+            } else if (elem.type === 'date') {
+                elem.value = value ? DateTime.from(value).format('Y-m-d') : '';
+
+            } else if (elem.type === 'datetime-local' || elem.type === 'datetime') {
+                elem.value = value ? DateTime.from(value).format('Y-m-d\\TH:i:s') : '';
+
             } else {
-                elem.value = '' + value;
+                elem.value = value !== null ? '' + value : '';
 
             }
 
@@ -256,5 +262,6 @@ _context.invoke('Nette.Forms', function (DOM, Arrays, FormData, Vendor, undefine
 }, {
     DOM: 'Utils.DOM',
     Arrays: 'Utils.Arrays',
+    DateTime: 'Utils.DateTime',
     FormData: 'Nette.Ajax.FormData'
 });
