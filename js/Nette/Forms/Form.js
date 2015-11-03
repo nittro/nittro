@@ -21,8 +21,8 @@ _context.invoke('Nette.Forms', function (DOM, Arrays, DateTime, FormData, Vendor
         DOM.addListener(this._.form, 'reset', this._handleReset.bind(this));
 
     }, {
-        getElement: function () {
-            return this._.form;
+        getElement: function (name) {
+            return name ? this._.form.elements.namedItem(name) : this._.form;
 
         },
 
