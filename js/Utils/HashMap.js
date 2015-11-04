@@ -171,7 +171,7 @@ _context.invoke('Utils', function (Arrays) {
             return o;
 
         },
-        
+
         splice: function (from, remove) {
             var values = Arrays.from(arguments),
                 keys = values.slice().map(function() { return -1; }),
@@ -350,6 +350,6 @@ _context.invoke('Utils', function (Arrays) {
         }
     });
 
-    _context.register(HashMap, 'Utils.HashMap');
+    _context.register(HashMap, 'HashMap');
 
 });

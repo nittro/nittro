@@ -76,7 +76,7 @@ _context.invoke('Nette.Widgets', function(Dialog, Form, DOM, Arrays) {
         }
     });
 
-    _context.register(FormDialog, 'Nette.Widgets.FormDialog');
+    _context.register(FormDialog, 'FormDialog');
 
 }, {
     Form: 'Nette.Forms.Form',

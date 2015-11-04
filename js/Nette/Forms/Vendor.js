@@ -1,7 +1,7 @@
 _context.invoke('Nette.Forms', function (DOM, Arrays) {
 
     var define = function (cb) {
-        _context.register(cb(), 'Nette.Forms.Vendor');
+        _context.register(cb(), 'Vendor');
 
     };
 

@@ -249,7 +249,7 @@ _context.invoke('Nette.Widgets', function(DOM, Arrays) {
         }
     });
 
-    _context.register(DialogBase, 'Nette.Widgets.DialogBase');
+    _context.register(DialogBase, 'DialogBase');
 
 }, {
     DOM: 'Utils.DOM',

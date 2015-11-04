@@ -46,6 +46,6 @@ _context.invoke('Utils', function(undefined) {
 
     };
 
-    _context.register(ReflectionClass, 'Utils.ReflectionClass');
+    _context.register(ReflectionClass, 'ReflectionClass');
 
 });

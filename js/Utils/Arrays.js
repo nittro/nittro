@@ -251,6 +251,6 @@ _context.invoke('Utils', function(undefined) {
         }
     };
 
-    _context.register(Arrays, 'Utils.Arrays');
+    _context.register(Arrays, 'Arrays');
 
 });

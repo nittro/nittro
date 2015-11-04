@@ -129,6 +129,6 @@ _context.invoke('Nette.Application', function() {
         }
     });
 
-    _context.register(Storage, 'Nette.Application.Storage');
+    _context.register(Storage, 'Storage');
 
 });

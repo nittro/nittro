@@ -1,13 +1,13 @@
 _context.invoke('Utils', function(Arrays, undefined) {
-    
+
     var ReflectionFunction = function(f) {
         this._ = {
             reflectedFunction: f,
             argsList: f.length ? f.toString().match(/^function\s*\(\s*(.*?)\s*\)/i)[1].split(/\s*,\s*/) : []
         };
-        
+
     };
-    
+
     ReflectionFunction.from = function(f) {
         return f instanceof ReflectionFunction ? f : new ReflectionFunction(f);
 
@@ -42,6 +42,6 @@ _context.invoke('Utils', function(Arrays, undefined) {
 
     };
 
-    _context.register(ReflectionFunction, 'Utils.ReflectionFunction');
+    _context.register(ReflectionFunction, 'ReflectionFunction');
 
 });

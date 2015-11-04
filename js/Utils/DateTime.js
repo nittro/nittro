@@ -299,6 +299,6 @@ _context.invoke('Utils', function(Strings, Arrays, undefined) {
 		}
 	};
 
-    _context.register(DateTime, 'Utils.DateTime');
+    _context.register(DateTime, 'DateTime');
 
 });

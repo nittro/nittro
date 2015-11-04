@@ -109,7 +109,7 @@ _context.invoke('Nette.Page', function (DOM) {
         }
     });
 
-    _context.register(Snippet, 'Nette.Page.Snippet');
+    _context.register(Snippet, 'Snippet');
 
 }, {
     DOM: 'Utils.DOM'

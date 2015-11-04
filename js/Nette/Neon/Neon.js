@@ -369,8 +369,8 @@ _context.invoke('Nette.Neon', function(Nette, HashMap, Tokenizer, Strings, Array
 
     };
 
-    _context.register(Neon, 'Nette.Neon.Neon');
-    _context.register(NeonEntity, 'Nette.Neon.NeonEntity');
+    _context.register(Neon, 'Neon');
+    _context.register(NeonEntity, 'NeonEntity');
 
 }, {
     HashMap: 'Utils.HashMap',

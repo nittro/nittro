@@ -62,6 +62,6 @@ _context.invoke('Nette', function () {
     };
 
 
-    _context.register(Freezable, 'Nette.Freezable');
+    _context.register(Freezable, 'Freezable');
 
 });

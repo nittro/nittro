@@ -8,6 +8,6 @@ _context.invoke('Nette', function () {
     });
 
     _context.mixin(Object, 'Nette.EventEmitter');
-    _context.register(Object, 'Nette.Object');
+    _context.register(Object, 'Object');
 
 });

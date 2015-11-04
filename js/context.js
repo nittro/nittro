@@ -274,6 +274,8 @@ var _context = (function() {
     };
 
 
+    var nsStack = [];
+
 
     var invoke = function(ns, f, i) {
         if (i === undefined && typeof ns === 'function') {
@@ -284,18 +286,17 @@ var _context = (function() {
         }
 
         if (ns) {
-            if (typeof ns === 'string') {
-                ns = lookup(ns, true);
+            nsStack.unshift(ns, ns = lookup(ns, true));
 
-            }
         } else {
             ns = t;
+            nsStack.unshift(null, ns);
 
         }
 
         var params = f.length ? f.toString().match(/^function\s*\((.*?)\)/i)[1].split(/\s*,\s*/) : [],
             args = [],
-            p, c;
+            p, c, r;
 
         for (p = 0; p < params.length; p++) {
             if (params[p] === 'context') {
@@ -329,7 +330,11 @@ var _context = (function() {
             }
         }
 
-        return f.apply(ns, args);
+        r = f.apply(ns, args);
+
+        nsStack.shift();
+        nsStack.shift();
+        return r;
 
     };
 
@@ -341,8 +346,14 @@ var _context = (function() {
             ns = lookup(ns.join('.'), true);
 
         } else {
-            ns = t;
+            if (nsStack.length && nsStack[0] !== null) {
+                name = nsStack[0] + '.' + name;
+                ns = nsStack[1];
 
+            } else {
+                ns = t;
+
+            }
         }
 
         ns[key] = constructor;

@@ -257,7 +257,7 @@ _context.invoke('Nette.DI', function(Nette, ReflectionClass, ReflectionFunction,
         }
     };
 
-    _context.register(Container, 'Nette.DI.Container');
+    _context.register(Container, 'Container');
 
 }, {
     ReflectionClass: 'Utils.ReflectionClass',

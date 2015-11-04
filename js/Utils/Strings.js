@@ -231,81 +231,9 @@ _context.invoke('Utils', function(undefined) {
 
             return s.join('');
 
-        },
-
-        parseArguments: function(s) {
-            var args = [],
-                a,
-                i,
-                o = 0,
-                m,
-                c,
-                q = false,
-                p = 0,
-                r = {};
-
-            r['"'] = /^"(.*?(?:[^\\](?:\\\\)+)?)"\s*(,|$)/;
-            r["'"] = /^'(.*?(?:[^\\](?:\\\\)+)?)'\s*(,|$)/;
-
-            for (i = 0; i <= s.length; i++) {
-                c = i === s.length ? ',' : s.charAt(i);
-
-                if (c.match(/['"]/) && p === 0) {
-                    m = s.substr(i).match(r[c]);
-                    args.push(m[1]);
-                    i += m[0].length;
-                    o = i + 1;
-
-                } else if (c === '(' && !q) {
-                    p++;
-
-                } else if (c === ')' && !q) {
-                    p--;
-
-                } else if (c === '\\') {
-                    q = !q;
-
-                } else if (c === ',' && p === 0) {
-                    a = s.substr(o, i - o).trim();
-
-                    if (a.match(/^-?[0-9]+$/)) {
-                        a = parseInt(a);
-
-                    } else if (a.match(/^-?[0-9]*[.,]?[0-9]+$/)) {
-                        a = parseFloat(a);
-
-                    } else if (a.match(/^(true|false)$/i)) {
-                        a = a.toLowerCase() === 'true';
-
-                    } else if (a === 'null') {
-                        a = null;
-
-                    } else {
-                        a = new Statement(a);
-
-                    }
-
-                    args.push(a);
-                    o = i + 1;
-
-                } else {
-                    q = false;
-
-                }
-            }
-
-            return args;
-
         }
     };
 
-    var Statement = function(s) {
-        this.toString = function() {
-            return s;
-        };
-    };
-
-    _context.register(Strings, 'Utils.Strings');
-    _context.register(Statement, 'Utils.Statement');
+    _context.register(Strings, 'Strings');
 
 });

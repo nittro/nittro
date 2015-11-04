@@ -59,7 +59,7 @@ _context.invoke('Nette.Utils', function(Nette, Strings, Arrays, undefined) {
         }
     });
 
-    _context.register(Tokenizer, 'Nette.Utils.Tokenizer');
+    _context.register(Tokenizer, 'Tokenizer');
 
 }, {
     Strings: 'Utils.Strings',

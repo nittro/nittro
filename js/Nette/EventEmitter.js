@@ -233,7 +233,7 @@ _context.invoke('Nette', function () {
 
     });
 
-    _context.register(NetteEventEmitter, 'Nette.EventEmitter');
-    _context.register(NetteEvent, 'Nette.Event');
+    _context.register(NetteEventEmitter, 'EventEmitter');
+    _context.register(NetteEvent, 'Event');
 
 });

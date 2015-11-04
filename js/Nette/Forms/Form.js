@@ -52,7 +52,7 @@ _context.invoke('Nette.Forms', function (DOM, Arrays, DateTime, FormData, Vendor
                 name = elem.name;
                 value = undefined;
 
-                if (!name || names.indexOf(name) > -1 || elem.tagName.toLowerCase() === 'button' || elem.type in {'submit':1, 'reset':1, 'button':1}) {
+                if (!name || names.indexOf(name) > -1 || elem.tagName.toLowerCase() === 'button' || elem.type in {'submit':1, 'reset':1, 'button':1, 'image':1}) {
                     continue;
 
                 }
@@ -196,31 +196,26 @@ _context.invoke('Nette.Forms', function (DOM, Arrays, DateTime, FormData, Vendor
         },
 
         submit: function (by) {
-            var btn;
+            var evt;
 
             if (by) {
-                btn = this._.form.elements.namedItem(by);
+                var btn = this._.form.elements.namedItem(by);
 
-            } else {
-                for (var i = 0; i < this._.form.elements.length; i++) {
-                    if (this._.form.elements.item(i).type === 'submit') {
-                        btn = this._.form.elements.item(i);
-                        break;
+                if (btn && btn.type === 'submit') {
+                    evt = document.createEvent('MouseEvents');
+                    evt.initMouseEvent('click', true, true, window);
+                    btn.dispatchEvent(evt);
+                    return this;
 
-                    }
+                } else {
+                    throw new TypeError('Unknown element or not a submit button: ' + by);
+
                 }
             }
 
-            if (btn) {
-                var evt = new MouseEvent('click', {
-                    view: window,
-                    bubbles: true,
-                    cancellable: true
-                });
-
-                btn.dispatchEvent(evt);
-
-            }
+            evt = document.createEvent('HTMLEvents');
+            evt.initEvent('submit', true, true);
+            this._.form.dispatchEvent(evt);
 
             return this;
 
@@ -272,7 +267,7 @@ _context.invoke('Nette.Forms', function (DOM, Arrays, DateTime, FormData, Vendor
         }
     });
 
-    _context.register(Form, 'Nette.Forms.Form');
+    _context.register(Form, 'Form');
 
 }, {
     DOM: 'Utils.DOM',

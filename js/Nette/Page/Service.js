@@ -657,7 +657,7 @@ _context.invoke('Nette.Page', function (DOM, Url, Snippet) {
         }
     });
 
-    _context.register(Service, 'Nette.Page.Service');
+    _context.register(Service, 'Service');
 
 }, {
     DOM: 'Utils.DOM',

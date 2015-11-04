@@ -515,6 +515,6 @@ _context.invoke('Utils', function (Arrays, Strings, undefined) {
 
     testElem = null;
 
-    _context.register(DOM, 'Utils.DOM');
+    _context.register(DOM, 'DOM');
 
 });

@@ -28,6 +28,6 @@ _context.invoke('Nette.Ajax', function () {
         }
     });
 
-    _context.register(Response, 'Nette.Ajax.Response');
+    _context.register(Response, 'Response');
 
 });

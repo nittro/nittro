@@ -246,7 +246,7 @@ _context.invoke('Nette.Ajax.Transport', function (Response, FormData, Url) {
         }
     });
 
-    _context.register(Native, 'Nette.Ajax.Transport.Native');
+    _context.register(Native, 'Native');
 
 }, {
     Url: 'Utils.Url',

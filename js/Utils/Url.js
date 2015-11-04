@@ -479,6 +479,6 @@ _context.invoke('Utils', function(Strings, undefined) {
 
     };
 
-    _context.register(Url, 'Utils.Url');
+    _context.register(Url, 'Url');
 
 });

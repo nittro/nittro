@@ -200,7 +200,7 @@ _context.invoke('Nette.Widgets', function (DOM, Arrays) {
         }
     });
 
-    _context.register(FlashMessages, 'Nette.Widgets.FlashMessages');
+    _context.register(FlashMessages, 'FlashMessages');
 
 }, {
     DOM: 'Utils.DOM',

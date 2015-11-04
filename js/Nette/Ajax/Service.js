@@ -44,6 +44,6 @@ _context.invoke('Nette.Ajax', function (Request) {
         }
     });
 
-    _context.register(Service, 'Nette.Ajax.Service');
+    _context.register(Service, 'Service');
 
 });

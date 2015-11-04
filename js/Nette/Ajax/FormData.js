@@ -70,6 +70,6 @@ _context.invoke('Nette.Ajax', function(undefined) {
         }
     });
 
-    _context.register(FormData, 'Nette.Ajax.FormData');
+    _context.register(FormData, 'FormData');
 
 });

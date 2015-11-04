@@ -95,7 +95,7 @@ _context.invoke('Nette.Page', function (DOM) {
         }
     });
 
-    _context.register(Transitions, 'Nette.Page.Transitions');
+    _context.register(Transitions, 'Transitions');
 
 }, {
     DOM: 'Utils.DOM'

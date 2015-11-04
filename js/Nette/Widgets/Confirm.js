@@ -79,7 +79,7 @@ _context.invoke('Nette.Widgets', function (Dialog, Arrays, ReflectionClass) {
         }
 	});
 
-    _context.register(Confirm, 'Nette.Widgets.Confirm');
+    _context.register(Confirm, 'Confirm');
 
 }, {
 	ReflectionClass: 'Utils.ReflectionClass',

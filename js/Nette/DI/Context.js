@@ -162,7 +162,7 @@ _context.invoke('Nette.DI', function(Container, Arrays, HashMap, ReflectionClass
         _expandArg: '__expandArg'
     });
 
-    _context.register(Context, 'Nette.DI.Context');
+    _context.register(Context, 'Context');
 
 }, {
     Arrays: 'Utils.Arrays',

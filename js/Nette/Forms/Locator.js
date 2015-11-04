@@ -63,6 +63,6 @@ _context.invoke('Nette.Forms', function (Form, Vendor) {
         }
     });
 
-    _context.register(Locator, 'Nette.Forms.Locator');
+    _context.register(Locator, 'Locator');
 
 });

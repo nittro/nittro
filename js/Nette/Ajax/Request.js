@@ -137,8 +137,7 @@ _context.invoke('Nette.Ajax', function (Url, FormData, undefined) {
     });
 
     _context.mixin(Request, 'Nette.Freezable');
-
-    _context.register(Request, 'Nette.Ajax.Request');
+    _context.register(Request, 'Request');
 
 }, {
     Url: 'Utils.Url'

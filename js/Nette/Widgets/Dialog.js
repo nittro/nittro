@@ -23,7 +23,7 @@ _context.invoke('Nette.Widgets', function(DialogBase, DOM, Arrays) {
         }
     });
 
-    _context.register(Dialog, 'Nette.Widgets.Dialog');
+    _context.register(Dialog, 'Dialog');
 
 }, {
     DOM: 'Utils.DOM',
