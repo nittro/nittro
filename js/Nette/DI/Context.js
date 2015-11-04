@@ -139,7 +139,7 @@ _context.invoke('Nette.DI', function(Container, Arrays, HashMap, ReflectionClass
         },
 
         _expandArg: function (arg) {
-            if (typeof arg === 'string') {
+            if (typeof arg === 'string' && arg.indexOf('%') > -1) {
                 if (arg.match(/^%[^%]+%$/)) {
                     return this.getParam(arg.replace(/^%|%$/g, ''));
 
