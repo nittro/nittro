@@ -273,7 +273,7 @@ _context.invoke('Nette.Page', function (DOM, Url, Snippet) {
             this._setupDynamic(dynamic, data, setup, transitionTargets);
             this._setup(setup, data);
 
-            this.trigger('update');
+            this.trigger('update', payload);
 
             this._.transitions.transitionIn(transitionTargets)
                 .then(function () {
