@@ -16,12 +16,12 @@ _context.invoke('Nette.Forms', function (Form, Vendor) {
             if (typeof id !== 'string') {
                 elem = id;
 
-                if (!elem.id) {
-                    elem.id = 'frm-anonymous' + (++this._.anonId);
+                if (!elem.getAttribute('id')) {
+                    elem.setAttribute('id', 'frm-anonymous' + (++this._.anonId));
 
                 }
 
-                id = elem.id;
+                id = elem.getAttribute('id');
 
             }
 
@@ -37,7 +37,7 @@ _context.invoke('Nette.Forms', function (Form, Vendor) {
 
         removeForm: function (id) {
             if (typeof id !== 'string') {
-                id = id.id;
+                id = id.getAttribute('id');
 
             }
 
