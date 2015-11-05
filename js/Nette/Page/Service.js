@@ -62,7 +62,7 @@ _context.invoke('Nette.Page', function (DOM, Url, Snippet) {
             var link = DOM.closest(evt.target, 'a', 'ajax'),
                 url;
 
-            if (!link || !(url = Url.from(link.href)).isLocal() || url.compare() <= Url.PART.HASH) {
+            if (!link || !(url = Url.from(link.href)).isLocal() || url.compare() === Url.PART.HASH) {
                 return;
 
             }
