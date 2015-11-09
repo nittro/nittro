@@ -8,10 +8,10 @@ var _context = (function() {
         undefined,
         doc = document,
         loc = doc.location,
-        elem = doc.createElement,
+        elem = function(n) { return doc.createElement(n); },
         win = window,
-        setTimeout = win.setTimeout,
-        clearTimeout = win.clearTimeout,
+        setTimeout = function(c, t) { return win.setTimeout(c, t); },
+        clearTimeout = function(t) { return win.clearTimeout(t); },
         promise = Promise;
 
     if (typeof indexOf !== 'function') {

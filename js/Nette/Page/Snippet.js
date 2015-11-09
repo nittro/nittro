@@ -1,9 +1,9 @@
 _context.invoke('Nette.Page', function (DOM) {
 
-    var Snippet = _context.extend(function (id) {
+    var Snippet = _context.extend(function (id, state) {
         this._ = {
             id: id,
-            state: Snippet.INACTIVE,
+            state: typeof state === 'number' ? state : Snippet.INACTIVE,
             handlers: [
                 [], [], [], []
             ]

@@ -11,6 +11,7 @@ _context.invoke('Nette.Page', function (DOM, Url, Snippet) {
         this._.request = null;
         this._.transitioning = null;
         this._.setup = false;
+        this._.currentPhase = Snippet.INACTIVE;
         this._.currentUrl = Url.fromCurrent();
 
         DOM.addListener(document, 'click', this._handleClick.bind(this));
@@ -319,7 +320,7 @@ _context.invoke('Nette.Page', function (DOM, Url, Snippet) {
 
         getSnippet: function (id) {
             if (!this._.snippets[id]) {
-                this._.snippets[id] = new Snippet(id);
+                this._.snippets[id] = new Snippet(id, this._.currentPhase);
 
             }
 
@@ -376,7 +377,9 @@ _context.invoke('Nette.Page', function (DOM, Url, Snippet) {
         },
 
         _teardown: function (snippets) {
+            this._.currentPhase = Snippet.PREPARE_TEARDOWN;
             this._setSnippetsState(snippets, Snippet.PREPARE_TEARDOWN);
+            this._.currentPhase = Snippet.RUN_TEARDOWN;
             this._setSnippetsState(snippets, Snippet.RUN_TEARDOWN);
 
             for (var id in snippets) {
@@ -397,7 +400,9 @@ _context.invoke('Nette.Page', function (DOM, Url, Snippet) {
                 }
             }
 
+            this._.currentPhase = Snippet.PREPARE_SETUP;
             this._setSnippetsState(this._.snippets, Snippet.PREPARE_SETUP);
+            this._.currentPhase = Snippet.RUN_SETUP;
             this._setSnippetsState(this._.snippets, Snippet.RUN_SETUP);
 
         },
