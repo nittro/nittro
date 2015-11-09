@@ -80,7 +80,7 @@ _context.invoke('Nette.Page', function (DOM) {
         },
 
         setState: function (state) {
-            if (state !== Snippet.INACTIVE || (this._.state + 1) % 4 !== state) {
+            if (state !== Snippet.INACTIVE && (this._.state + 1) % 4 !== state) {
                 return this;
 
             }
