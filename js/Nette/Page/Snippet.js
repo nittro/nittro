@@ -80,21 +80,27 @@ _context.invoke('Nette.Page', function (DOM) {
         },
 
         setState: function (state) {
-            if (state !== Snippet.INACTIVE && (this._.state + 1) % 4 !== state) {
-                return this;
+            if (state === Snippet.INACTIVE) {
+                this._.state = state;
+
+                this._.handlers.forEach(function (queue) {
+                    queue.splice(0, queue.length);
+
+                });
+
+            } else if ((this._.state + 1) % 4 === state) {
+                this._.state = state;
+
+                var elm = this.getElement();
+
+                this._.handlers[this._.state].forEach(function (handler) {
+                    handler(elm);
+
+                });
+
+                this._.handlers[this._.state].splice(0, this._.handlers[this._.state].length);
 
             }
-
-            this._.state = state;
-
-            var elm = this.getElement();
-
-            this._.handlers[this._.state].forEach(function (handler) {
-                handler(elm);
-
-            });
-
-            this._.handlers[this._.state].splice(0, this._.handlers[this._.state].length);
 
             return this;
 
