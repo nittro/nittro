@@ -382,6 +382,9 @@ _context.invoke('Nette.Page', function (DOM, Url, Snippet) {
             this._.currentPhase = Snippet.RUN_TEARDOWN;
             this._setSnippetsState(snippets, Snippet.RUN_TEARDOWN);
 
+            this._.currentPhase = Snippet.INACTIVE;
+            this._setSnippetsState(snippets, Snippet.INACTIVE);
+
             for (var id in snippets) {
                 if (snippets.hasOwnProperty(id) && snippets[id]) {
                     delete this._.snippets[id];
