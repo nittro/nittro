@@ -377,12 +377,8 @@ _context.invoke('Nette.Page', function (DOM, Url, Snippet) {
         },
 
         _teardown: function (snippets) {
-            this._.currentPhase = Snippet.PREPARE_TEARDOWN;
             this._setSnippetsState(snippets, Snippet.PREPARE_TEARDOWN);
-            this._.currentPhase = Snippet.RUN_TEARDOWN;
             this._setSnippetsState(snippets, Snippet.RUN_TEARDOWN);
-
-            this._.currentPhase = Snippet.INACTIVE;
             this._setSnippetsState(snippets, Snippet.INACTIVE);
 
             for (var id in snippets) {
@@ -403,9 +399,7 @@ _context.invoke('Nette.Page', function (DOM, Url, Snippet) {
                 }
             }
 
-            this._.currentPhase = Snippet.PREPARE_SETUP;
             this._setSnippetsState(this._.snippets, Snippet.PREPARE_SETUP);
-            this._.currentPhase = Snippet.RUN_SETUP;
             this._setSnippetsState(this._.snippets, Snippet.RUN_SETUP);
 
         },
@@ -434,6 +428,8 @@ _context.invoke('Nette.Page', function (DOM, Url, Snippet) {
         },
 
         _setSnippetsState: function (snippets, state) {
+            this._.currentPhase = state;
+
             for (var id in snippets) {
                 if (snippets.hasOwnProperty(id)) {
                     this.getSnippet(id).setState(state);
