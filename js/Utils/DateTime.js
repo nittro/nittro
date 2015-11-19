@@ -75,7 +75,7 @@ _context.invoke('Utils', function(Strings, Arrays, undefined) {
 		N: function(d, u, n) { n = u ? d.getUTCDay() : d.getDay(); return n === 0 ? 7 : n; },
 		S: function(d, u, n) { n = u ? d.getUTCDate() : d.getDate(); n %= 10; return n === 0 || n > 3 ? 'th' : ['st', 'nd', 'rd'][n - 1]; },
 		w: function(d, u) { return u ? d.getUTCDay() : d.getDay(); },
-		Z: function(d, u, n, m, y, M) { n = u ? d.getUTCDate() : d.getDate(); n--; y = u ? d.getUTCFullYear() : d.getFullYear(); m = 0; M = u ? d.getUTCMonth() : d.getMonth(); while (m < M) n += DateTime.getDaysInMonth(m++, y); return n; },
+		z: function(d, u, n, m, y, M) { n = u ? d.getUTCDate() : d.getDate(); n--; y = u ? d.getUTCFullYear() : d.getFullYear(); m = 0; M = u ? d.getUTCMonth() : d.getMonth(); while (m < M) n += DateTime.getDaysInMonth(m++, y); return n; },
 		W: ni,
 		F: function(d, u) { return DateTime.names.months.full[u ? d.getUTCMonth() : d.getMonth()]; },
 		m: function(d, u) { return pad((u ? d.getUTCMonth() : d.getMonth()) + 1); },

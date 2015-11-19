@@ -125,12 +125,14 @@ _context.invoke('Nette.Forms', function (DOM, Arrays, DateTime, FormData, Vendor
                 }
             } else if (elem.tagName.toLowerCase() === 'select') {
                 var single = elem.type === 'select-one',
-                    arr = Arrays.isArray(value);
+                    arr = Arrays.isArray(value),
+                    v;
 
                 for (i = 0; i < elem.options.length; i++) {
-                    elem.options[i].selected = arr ? value.indexOf(elem.options[i].value) > -1 : value === elem.options[i].value;
+                    v = arr ? value.indexOf(elem.options[i].value) > -1 : value === elem.options[i].value;
+                    elem.options[i].selected = v;
 
-                    if (single) {
+                    if (v && single) {
                         break;
 
                     }
