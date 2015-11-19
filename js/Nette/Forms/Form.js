@@ -102,7 +102,8 @@ _context.invoke('Nette.Forms', function (DOM, Arrays, DateTime, FormData, Vendor
 
             }
 
-            var i;
+            var i,
+                toStr = function(v) { return '' + v; };
 
             if (!elem) {
                 throw new TypeError('Invalid argument to setValue(), must be (the name of) an existing form element');
@@ -115,7 +116,7 @@ _context.invoke('Nette.Forms', function (DOM, Arrays, DateTime, FormData, Vendor
                     }
                 }
             } else if (elem.type === 'radio') {
-                elem.checked = value !== null && elem.value === value;
+                elem.checked = value !== null && elem.value === toStr(value);
 
             } else if (elem.type === 'file') {
                 if (value === null) {
@@ -128,9 +129,17 @@ _context.invoke('Nette.Forms', function (DOM, Arrays, DateTime, FormData, Vendor
                     arr = Arrays.isArray(value),
                     v;
 
+                if (arr) {
+                    value = value.map(toStr);
+
+                } else {
+                    value = toStr(value);
+
+                }
+
                 for (i = 0; i < elem.options.length; i++) {
-                    v = arr ? value.indexOf(elem.options[i].value) > -1 : value === elem.options[i].value;
-                    elem.options[i].selected = v;
+                    v = arr ? value.indexOf(elem.options.item(i).value) > -1 : value === elem.options.item(i).value;
+                    elem.options.item(i).selected = v;
 
                     if (v && single) {
                         break;
@@ -138,7 +147,7 @@ _context.invoke('Nette.Forms', function (DOM, Arrays, DateTime, FormData, Vendor
                     }
                 }
             } else if (elem.type === 'checkbox') {
-                elem.checked = Arrays.isArray(value) ? value.indexOf(elem.value) > -1 : !!value;
+                elem.checked = Arrays.isArray(value) ? value.map(toStr).indexOf(elem.value) > -1 : !!value;
 
             } else if (elem.type === 'date') {
                 elem.value = value ? DateTime.from(value).format('Y-m-d') : '';
@@ -147,7 +156,7 @@ _context.invoke('Nette.Forms', function (DOM, Arrays, DateTime, FormData, Vendor
                 elem.value = value ? DateTime.from(value).format('Y-m-d\\TH:i:s') : '';
 
             } else {
-                elem.value = value !== null ? '' + value : '';
+                elem.value = value !== null ? toStr(value) : '';
 
             }
 
