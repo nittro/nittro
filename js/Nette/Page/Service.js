@@ -530,7 +530,7 @@ _context.invoke('Nette.Page', function (DOM, Url, Snippet) {
                 }
             };
 
-            descriptor = descriptor.trim().split(/\s*,\s*/);
+            descriptor = descriptor.trim().split(/\s*;\s*/);
 
             while (descriptor.length) {
                 x = descriptor.shift();
