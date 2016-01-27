@@ -22,6 +22,59 @@ _context.invoke('Nette.Page', function (DOM, Url, Snippet) {
         this._checkReady();
 
     }, {
+        open: function (url, method, data) {
+            return this._createRequest(url, method, data);
+
+        },
+
+        openLink: function (link, evt) {
+            return this._createRequest(link.href, 'get', null, evt);
+
+        },
+
+        sendForm: function (form, evt) {
+            var frm = this._.formLocator.getForm(form),
+                data = frm.serialize();
+
+            return this._createRequest(form.action, form.method, data, evt, form)
+                .then(function () {
+                    frm.reset();
+
+                });
+        },
+
+        _handleState: function () {
+            var url = Url.fromCurrent(),
+                request;
+
+            if (url.compare(this._.currentUrl) <= Url.PART.HASH) {
+                return;
+
+            }
+
+            this._.currentUrl = url;
+            request = this._.ajax.createRequest(url);
+
+            try {
+                this._dispatchRequest(request);
+
+            } catch (e) {
+                document.location.href = url.toAbsolute();
+
+            }
+        },
+
+        _pushState: function (payload, url) {
+            if (payload.postGet) {
+                url = payload.url;
+
+            }
+
+            this._.currentUrl = Url.from(url);
+            window.history.pushState(null, payload.title || document.title, this._.currentUrl.toAbsolute());
+
+        },
+
         _checkReady: function () {
             if (document.readyState === 'loading') {
                 DOM.addListener(document, 'readystatechange', this._checkReady.bind(this));
@@ -72,25 +125,6 @@ _context.invoke('Nette.Page', function (DOM, Url, Snippet) {
 
         },
 
-        openLink: function (link, evt) {
-            if (this._.request) {
-                this._.request.abort();
-
-            }
-
-            var request = this._.ajax.createRequest(link.href);
-
-            try {
-                var p = this._dispatchRequest(request, link, true);
-                evt && evt.preventDefault();
-                return p;
-
-            } catch (e) {
-                return Promise.reject(e);
-
-            }
-        },
-
         _handleSubmit: function (evt) {
             if (evt.defaultPrevented) {
                 return;
@@ -106,64 +140,23 @@ _context.invoke('Nette.Page', function (DOM, Url, Snippet) {
 
         },
 
-        sendForm: function (form, evt) {
+        _createRequest: function (url, method, data, evt, context) {
             if (this._.request) {
                 this._.request.abort();
 
             }
 
-            var frm = this._.formLocator.getForm(form),
-                data = frm.serialize(),
-                request = this._.ajax.createRequest(form.action, form.method, data);
+            var request = this._.ajax.createRequest(url, method, data);
 
             try {
-                var p = this._dispatchRequest(request, form, true);
-
-                p.then(function () {
-                    frm.reset();
-
-                });
-
+                var p = this._dispatchRequest(request, context, true);
                 evt && evt.preventDefault();
-
                 return p;
 
             } catch (e) {
                 return Promise.reject(e);
 
             }
-        },
-
-        _handleState: function () {
-            var url = Url.fromCurrent(),
-                request;
-
-            if (url.compare(this._.currentUrl) <= Url.PART.HASH) {
-                return;
-
-            }
-
-            this._.currentUrl = url;
-            request = this._.ajax.createRequest(url);
-
-            try {
-                this._dispatchRequest(request);
-
-            } catch (e) {
-                document.location.href = url.toAbsolute();
-
-            }
-        },
-
-        _pushState: function (payload, url) {
-            if (payload.postGet) {
-                url = payload.url;
-
-            }
-
-            this._.currentUrl = Url.from(url);
-            window.history.pushState(null, payload.title || document.title, this._.currentUrl.toAbsolute());
-
         },
 
         _dispatchRequest: function (request, elem, pushState) {
