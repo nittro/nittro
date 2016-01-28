@@ -159,20 +159,14 @@ _context.invoke('Nette.Ajax.Transport', function (Response, FormData, Url) {
         },
 
         _formatData: function (request, xhr) {
-            var data = request.getData();
+            var data = request.getData(),
+                reArr = /\[]$/;
 
             if (data instanceof FormData) {
                 data = data.exportData(request.isGet() || request.isMethod('HEAD'));
 
                 if (!(data instanceof window.FormData)) {
-                    var tmp = {};
-
-                    data.forEach(function (item) {
-                        tmp[item.name] = item.value;
-
-                    });
-
-                    data = Url.buildQuery(tmp);
+                    data = Url.buildQuery(data, true);
                     xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
 
                 }

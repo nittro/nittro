@@ -346,7 +346,7 @@ _context.invoke('Utils', function(Strings, undefined) {
 
     };
 
-    Url.buildQuery = function(p) {
+    Url.buildQuery = function(data, pairs) {
         var q = [], n, en = encodeURIComponent;
 
         var val = function (v) {
@@ -386,15 +386,18 @@ _context.invoke('Utils', function(Strings, undefined) {
 
         };
 
-        for (n in p) {
-            if (p[n] === null || p[n] === undefined) {
+        for (n in data) {
+            if (data[n] === null || data[n] === undefined) {
                 continue;
 
-            } else if (typeof p[n] === 'object') {
-                q.push(flatten(p[n], n));
+            } else if (pairs) {
+                q.push(en(data[n].name) + '=' + val(data[n].value));
+
+            } else if (typeof data[n] === 'object') {
+                q.push(flatten(data[n], n));
 
             } else {
-                q.push(en(n) + '=' + val(p[n]));
+                q.push(en(n) + '=' + val(data[n]));
 
             }
         }
