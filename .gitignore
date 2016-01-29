@@ -98,4 +98,7 @@ com_crashlytics_export_strings.xml
 crashlytics.properties
 crashlytics-build.properties
 
+# Node.js modules
+node_modules/
+
 # Created by .ignore support plugin (hsz.mobi)
