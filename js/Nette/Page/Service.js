@@ -28,7 +28,7 @@ _context.invoke('Nette.Page', function (DOM, Url, Snippet) {
         },
 
         openLink: function (link, evt) {
-            return this._createRequest(link.href, 'get', null, evt);
+            return this._createRequest(link.href, 'get', null, evt, link);
 
         },
 
@@ -94,7 +94,7 @@ _context.invoke('Nette.Page', function (DOM, Url, Snippet) {
         },
 
         _handleClick: function (evt) {
-            if (evt.defaultPrevented) {
+            if (evt.defaultPrevented || evt.ctrlKey || evt.shiftKey || evt.altKey || evt.metaKey) {
                 return;
 
             }
