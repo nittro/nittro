@@ -33,7 +33,7 @@ module.exports = function (grunt) {
                         'src/js/Nette/Page/Snippet.js',
                         'src/js/Nette/Page/Transitions.js',
                         'src/js/Nette/Page/Service.js',
-                        'src/js/Nette/Forms/Vendor.js',
+                        'src/js/Nette/Forms/Vendor.js', // VENDOR FORMS!!!
                         'src/js/Nette/Forms/Form.js',
                         'src/js/Nette/Forms/Locator.js',
                         'src/js/Nette/DI/Container.js',
