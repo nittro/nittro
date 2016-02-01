@@ -4,7 +4,7 @@ _context.invoke(function(Nette) {
         params: {
             basePath: '',
             flashes: {
-                layer: document.getElementById('flashes')
+                layer: document.body
             }
         },
         services: {
@@ -30,7 +30,5 @@ _context.invoke(function(Nette) {
     this.di = di;
     di.runServices();
 
-}, {
-    Url: 'Utils.Url'
 });
 
