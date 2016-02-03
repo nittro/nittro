@@ -4,7 +4,8 @@ _context.invoke('Utils', function (Arrays, undefined) {
         this._ = {
             keys: [],
             values: [],
-            numericIndices: 0
+            nonNumeric: 0,
+            nextNumeric: 0
         };
 
         if (src) {
@@ -15,14 +16,14 @@ _context.invoke('Utils', function (Arrays, undefined) {
         length: 0,
 
         isList: function () {
-            return this.length === this._.numericIndices;
+            return this._.nonNumeric === 0;
 
         },
 
         clone: function (deep) {
             var o = new HashMap();
             o._.keys = this._.keys.slice();
-            o._.numericIndices = this._.numericIndices;
+            o._.nextNumeric = this._.nextNumeric;
             o.length = this.length;
 
             if (deep) {
@@ -80,9 +81,9 @@ _context.invoke('Utils', function (Arrays, undefined) {
 
         push: function (value) {
             for (var i = 0; i < arguments.length; i++) {
-                this._.keys.push(this._.numericIndices);
+                this._.keys.push(this._.nextNumeric);
                 this._.values.push(arguments[i]);
-                this._.numericIndices++;
+                this._.nextNumeric++;
                 this.length++;
 
             }
@@ -97,15 +98,19 @@ _context.invoke('Utils', function (Arrays, undefined) {
 
             }
 
-            var i = this.length - 1;
+            var k = this._.keys.pop();
 
-            if (typeof this._.keys[i] === 'number') {
-                this._.numericIndices--;
+            if (typeof k === 'number') {
+                if (k + 1 === this._.nextNumeric) {
+                    this._.nextNumeric--;
+
+                }
+            } else {
+                this._.nonNumeric--;
 
             }
 
             this.length--;
-            this._.keys.pop();
             return this._.values.pop();
 
         },
@@ -117,8 +122,11 @@ _context.invoke('Utils', function (Arrays, undefined) {
             }
 
             if (typeof this._.keys[0] === 'number') {
-                this._.numericIndices--;
+                this._.nextNumeric--;
                 this._shiftKeys(1, this.length, -1);
+
+            } else {
+                this._.nonNumeric--;
 
             }
 
@@ -129,20 +137,21 @@ _context.invoke('Utils', function (Arrays, undefined) {
         },
 
         unshift: function (value) {
-            this._shiftKeys(0, this.length, 1);
-            this._.keys.unshift(0);
-            this._.values.unshift(value);
+            var n = arguments.length,
+                i = 0,
+                keys = new Array(n),
+                values = Arrays.createFrom(arguments);
+
+            keys = keys.map(function() { return i++; });
+            keys.splice(0, 0, 0, 0);
+            values.splice(0, 0, 0, 0);
+
+            this._shiftKeys(0, this.length, n);
+            this._.keys.splice.apply(this._.keys, keys);
+            this._.values.splice.apply(this._.values, values);
+            this._.nextNumeric += n;
             return this;
 
-        },
-
-        _shiftKeys: function (from, to, diff) {
-            for (var i = from; i < to; i++) {
-                if (typeof this._.keys[i] === 'number') {
-                    this._.keys[i] += diff;
-
-                }
-            }
         },
 
         slice: function (from, to) {
@@ -155,18 +164,19 @@ _context.invoke('Utils', function (Arrays, undefined) {
 
             o._.keys = this._.keys.slice(from, to).map(function(k) {
                 if (typeof k === 'number') {
-                    k = o._.numericIndices;
-                    o._.numericIndices++;
+                    k = o._.nextNumeric;
+                    o._.nextNumeric++;
                     return k;
 
                 } else {
+                    o._.nonNumeric++;
                     return k;
 
                 }
             });
 
             o._.values = this._.values.slice(from, to);
-            o.length = Math.max(0, from - to);
+            o.length = o._.keys.length;
 
             return o;
 
@@ -184,12 +194,16 @@ _context.invoke('Utils', function (Arrays, undefined) {
             removed = this._.values.splice.apply(this._.values, values);
 
             this.length = this._.keys.length;
-            this._.numericIndices = 0;
+            this._.nextNumeric = 0;
+            this._.nonNumeric = 0;
 
             for (i = 0; i < this.length; i++) {
                 if (typeof this._.keys[i] === 'number') {
-                    this._.keys[i] = this._.numericIndices;
-                    this._.numericIndices++;
+                    this._.keys[i] = this._.nextNumeric;
+                    this._.nextNumeric++;
+
+                } else {
+                    this._.nonNumeric++;
 
                 }
             }
@@ -206,6 +220,15 @@ _context.invoke('Utils', function (Arrays, undefined) {
                 this._.values.push(value);
                 this.length++;
 
+                if (typeof key === 'number') {
+                    if (key >= this._.nextNumeric) {
+                        this._.nextNumeric = key + 1;
+
+                    }
+                } else {
+                    this._.nonNumeric++;
+
+                }
             } else {
                 this._.values[i] = value;
 
@@ -288,18 +311,6 @@ _context.invoke('Utils', function (Arrays, undefined) {
 
         },
 
-        _find: function (predicate, thisArg, expect) {
-            for (var i = 0; i < this.length; i++) {
-                if (predicate.call(thisArg || null, this._.values[i], this._.keys[i], this) === expect) {
-                    return i;
-
-                }
-            }
-
-            return false;
-
-        },
-
         filter: function (predicate, thisArg) {
             var o = new HashMap(),
                 i;
@@ -322,8 +333,10 @@ _context.invoke('Utils', function (Arrays, undefined) {
 
         exportData: function () {
             if (this.isList()) {
-                return this.getValues();
+                return this.getValues().map(function(v) {
+                    return v instanceof HashMap ? v.exportData() : v;
 
+                });
             }
 
             for (var i = 0, r = {}; i < this.length; i++) {
@@ -347,6 +360,27 @@ _context.invoke('Utils', function (Arrays, undefined) {
 
         getValues: function () {
             return this._.values.slice();
+
+        },
+
+        _shiftKeys: function (from, to, diff) {
+            for (var i = from; i < to; i++) {
+                if (typeof this._.keys[i] === 'number') {
+                    this._.keys[i] += diff;
+
+                }
+            }
+        },
+
+        _find: function (predicate, thisArg, expect) {
+            for (var i = 0; i < this.length; i++) {
+                if (predicate.call(thisArg || null, this._.values[i], this._.keys[i], this) === expect) {
+                    return i;
+
+                }
+            }
+
+            return false;
 
         }
     });
