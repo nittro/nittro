@@ -32,18 +32,19 @@ _context.invoke('Nette.Application.Routing', function (Nette, Strings, Arrays) {
             }
 
             var params = {},
-                i, n, p;
+                i, n, p, v;
 
             match.shift();
 
             for (i = 0, n = this._.mask.map.length; i < n; i++) {
                 p = this._.mask.map[i];
+                v = decodeURIComponent(match[i]);
 
                 if (p.style) {
-                    params[p.name] = URLRoute.styles[p.style].call(null, match[i]);
+                    params[p.name] = URLRoute.styles[p.style].call(null, v);
 
                 } else {
-                    params[p.name] = match[i];
+                    params[p.name] = v;
 
                 }
             }
