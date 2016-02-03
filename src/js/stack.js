@@ -1,36 +1,59 @@
 window._stack || (window._stack = []);
 
-(function(stack, context) {
-    var exec = function(f) {
+(function() {
+    function exec(f) {
         if (typeof f === 'function') {
-            context.invoke(f);
+            _context.invoke(f);
 
         } else if (typeof f === 'object' && typeof f.load !== 'undefined') {
-            var q = context.load.apply(context, f.load);
+            var q = _context.load.apply(_context, f.load);
 
             if (typeof f.then === 'function') {
                 q.then(f.then);
 
             } else if (f.then && f.then instanceof Array) {
-                q.then.apply(context, f.then);
+                q.then.apply(_context, f.then);
 
             }
         } else {
-            context.invoke.apply(context, f);
+            _context.invoke.apply(_context, f);
 
         }
-    };
-
-    while (stack.length) {
-        exec(stack.shift());
-
     }
 
-    stack.push = function() {
-        for (var i = 0; i < arguments.length; i++) {
-            exec(arguments[i]);
+    function init() {
+        while (_stack.length) {
+            exec(_stack.shift());
 
         }
-    };
 
-})(_stack, _context);
+        _stack.push = function() {
+            for (var i = 0; i < arguments.length; i++) {
+                exec(arguments[i]);
+
+            }
+        };
+    }
+
+    function check() {
+        if (typeof window._context !== 'undefined') {
+            init();
+            return true;
+
+        } else {
+            return false;
+
+        }
+    }
+
+    if (!check()) {
+        var tmr = window.setInterval(function() {
+            if (check()) {
+                window.clearInterval(tmr);
+                tmr = null;
+
+            }
+        }, 100);
+    }
+
+})();
