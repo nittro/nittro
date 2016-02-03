@@ -18,7 +18,6 @@ _context.invoke('Nette.Page', function (DOM, Url, Snippet) {
         DOM.addListener(document, 'submit', this._handleSubmit.bind(this));
         DOM.addListener(window, 'popstate', this._handleState.bind(this));
         this.on('error:default', this._showError.bind(this));
-        this.on('update:default', this._showHtmlFlashes.bind(this));
 
         this._checkReady();
 
@@ -88,6 +87,7 @@ _context.invoke('Nette.Page', function (DOM, Url, Snippet) {
 
                 window.setTimeout(function () {
                     this._setup();
+                    this._showHtmlFlashes();
                     this.trigger('update');
 
                 }.bind(this), 1);
@@ -267,6 +267,7 @@ _context.invoke('Nette.Page', function (DOM, Url, Snippet) {
 
             this._setupDynamic(dynamic, data, setup, transitionTargets);
             this._setup(setup, data);
+            this._showHtmlFlashes();
 
             this.trigger('update', payload);
 
