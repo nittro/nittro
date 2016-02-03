@@ -11,26 +11,6 @@ _context.invoke('Nette.DI', function(Container, Arrays, HashMap, ReflectionClass
         };
 
     }, {
-        getService: function(name) {
-            if (name === 'Context') {
-                return this;
-
-            }
-
-            return this._getService(name);
-
-        },
-
-        hasService: function(name) {
-            if (name === 'Context') {
-                return true;
-
-            }
-
-            return this._hasService(name);
-
-        },
-
         hasParam: function(name) {
             name = name.split('.');
             var p = this._.params,
@@ -128,11 +108,11 @@ _context.invoke('Nette.DI', function(Container, Arrays, HashMap, ReflectionClass
             }
 
             if (factory instanceof NeonEntity) {
-                args = factory.attributes.clone().merge(args);
+                args = factory.attributes.clone().merge(args || []);
                 return this._expandEntity(new NeonEntity(factory.value, args));
 
             } else {
-                args = factory.params.clone().merge(args);
+                args = factory.params.clone().merge(args || []);
                 return this.invoke(factory.callback, args);
 
             }
@@ -157,8 +137,6 @@ _context.invoke('Nette.DI', function(Container, Arrays, HashMap, ReflectionClass
     });
 
     _context.mixin(Context, Container, {
-        hasService: '_hasService',
-        getService: '_getService',
         _expandArg: '__expandArg'
     });
 

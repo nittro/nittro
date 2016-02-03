@@ -44,7 +44,10 @@ _context.invoke('Nette.DI', function(Nette, ReflectionClass, ReflectionFunction,
         getService: function (name) {
             prepare(this);
 
-            if (this._.services[name] === undefined) {
+            if (name === 'container') {
+                return this;
+
+            } else if (this._.services[name] === undefined) {
                 if (this._.serviceDefs[name]) {
                     this._create(name);
 
@@ -110,6 +113,37 @@ _context.invoke('Nette.DI', function(Nette, ReflectionClass, ReflectionFunction,
 
             return service;
 
+        },
+
+        hasService: function (name) {
+            prepare(this);
+            return name === 'container' || this._.services[name] !== undefined || this._.serviceDefs[name] !== undefined;
+
+        },
+
+        isCreated: function (name) {
+            if (!this.hasService(name)) {
+                throw new Error('Container has no service named "' + name + '"');
+
+            }
+
+            return !!this._.services[name];
+
+        },
+
+        runServices: function () {
+            prepare(this);
+
+            var name, def;
+
+            for (name in this._.serviceDefs) {
+                def = this._.serviceDefs[name];
+
+                if (typeof def === 'string' && def.match(/!$/) || def.factory !== undefined && def.run) {
+                    this.getService(name);
+
+                }
+            }
         },
 
         invoke: function (callback, args, thisArg) {
@@ -222,37 +256,6 @@ _context.invoke('Nette.DI', function(Nette, ReflectionClass, ReflectionFunction,
             } else {
                 return entity;
 
-            }
-        },
-
-        hasService: function (name) {
-            prepare(this);
-            return this._.services[name] !== undefined || this._.serviceDefs[name] !== undefined;
-
-        },
-
-        isCreated: function (name) {
-            if (!this.hasService(name)) {
-                throw new Error('Container has no service named "' + name + '"');
-
-            }
-
-            return !!this._.services[name];
-
-        },
-
-        runServices: function () {
-            prepare(this);
-
-            var name, def;
-
-            for (name in this._.serviceDefs) {
-                def = this._.serviceDefs[name];
-
-                if (typeof def === 'string' && def.match(/!$/) || def.factory !== undefined && def.run) {
-                    this.getService(name);
-
-                }
             }
         }
     };

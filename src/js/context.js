@@ -308,9 +308,9 @@ var _context = (function() {
         return a = {
             then: function (fulfilled, rejected) {
                 p.then(function () {
-                    invoke(fulfilled);
+                    fulfilled && invoke(fulfilled);
                 }, function () {
-                    invoke(rejected);
+                    rejected && invoke(rejected);
                 });
 
                 return a;

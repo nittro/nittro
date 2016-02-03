@@ -1,4 +1,4 @@
-_context.invoke('Utils', function (Arrays) {
+_context.invoke('Utils', function (Arrays, undefined) {
 
     var HashMap = _context.extend(function (src) {
         this._ = {
@@ -231,7 +231,8 @@ _context.invoke('Utils', function (Arrays) {
         },
 
         has: function (key) {
-            return this._.keys.indexOf(key) > -1;
+            var index = this._.keys.indexOf(key);
+            return index > -1 && this._.values[index] !== undefined;
 
         },
 
