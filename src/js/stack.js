@@ -1,3 +1,5 @@
+window._stack || (window._stack = []);
+
 (function(stack, context) {
     var exec = function(f) {
         if (typeof f === 'function') {
@@ -31,4 +33,4 @@
         }
     };
 
-})(_stack || [], _context);
+})(_stack, _context);
