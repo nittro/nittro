@@ -18,6 +18,7 @@ _context.invoke('Nette.Page', function (DOM, Url, Snippet) {
         DOM.addListener(document, 'submit', this._handleSubmit.bind(this));
         DOM.addListener(window, 'popstate', this._handleState.bind(this));
         this.on('error:default', this._showError.bind(this));
+        this.on('update:default', this._showHtmlFlashes.bind(this));
 
         this._checkReady();
 
@@ -221,7 +222,7 @@ _context.invoke('Nette.Page', function (DOM, Url, Snippet) {
             }
 
             if (payload && 'redirect' in payload) {
-                if (payload.allowAjax) {
+                if (payload.allowAjax !== false && Url.from(payload.redirect).isLocal()) {
                     this._dispatchRequest(this._.ajax.createRequest(payload.redirect), null, pushState);
 
                 } else {
@@ -297,6 +298,18 @@ _context.invoke('Nette.Page', function (DOM, Url, Snippet) {
 
                     }
                 }
+            }
+        },
+
+        _showHtmlFlashes: function () {
+            var elms = DOM.getByClassName('flashes-src'),
+                i, n, data;
+
+            for (i = 0, n = elms.length; i < n; i++) {
+                data = JSON.parse(elms[i].textContent.trim());
+                elms[i].parentNode.removeChild(elms[i]);
+                this._showFlashes(data);
+
             }
         },
 
