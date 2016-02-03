@@ -23,6 +23,7 @@ _stack.push(function(Nette) {
                     '::addTransport(Nette.Ajax.Transport.Native())'
                 ]
             },
+            'router': 'Nette.Application.Routing.Router()!',
             'page': 'Nette.Page.Service()!',
             'transitions': 'Nette.Page.Transitions(300)',
             'formLocator': 'Nette.Forms.Locator()',

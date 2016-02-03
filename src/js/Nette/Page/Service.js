@@ -548,7 +548,7 @@ _context.invoke('Nette.Page', function (DOM, Url, Snippet) {
                     a = s[2] || null;
                     s = s[1];
 
-                    if (s.match(/^[^.]|\s/)) {
+                    if (s.match(/^[^.]|[\s#\[>+:]/)) {
                         throw new TypeError('Invalid selector for sorted insert mode in container #' + container.getAttribute('id'));
 
                     }
@@ -641,7 +641,7 @@ _context.invoke('Nette.Page', function (DOM, Url, Snippet) {
             }
 
             sel.trim().split(/\s*,\s*/g).forEach(function (sel) {
-                if (sel.match(/^[^.#]|\s/)) {
+                if (sel.match(/^[^.#]|[\s\[>+:]/)) {
                     throw new TypeError('Invalid transition selector, only single-level .class and #id are allowed');
 
                 }
