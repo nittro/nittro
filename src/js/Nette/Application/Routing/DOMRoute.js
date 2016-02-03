@@ -9,12 +9,9 @@ _context.invoke('Nette.Application.Routing', function (Nette, DOM) {
             var matches;
 
             if (this._.selector.type === 'id') {
-                matches = DOM.getById(this._.selector.value);
+                var elem = DOM.getById(this._.selector.value);
+                matches = elem ? [elem] : [];
 
-                if (matches) {
-                    matches = [matches];
-
-                }
             } else {
                 matches = DOM.getByClassName(this._.selector.value);
 

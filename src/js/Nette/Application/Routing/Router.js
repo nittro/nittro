@@ -9,7 +9,7 @@ _context.invoke('Nette.Application.Routing', function (Nette, DOMRoute, URLRoute
             url: {}
         };
 
-        this._.page.on('update', this._matchAll.bind(this));
+        this._.page.on('setup', this._matchAll.bind(this));
 
     }, {
         getDOMRoute: function (selector) {

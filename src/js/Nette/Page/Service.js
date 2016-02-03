@@ -388,6 +388,8 @@ _context.invoke('Nette.Page', function (DOM, Url, Snippet) {
             this._setSnippetsState(snippets, Snippet.RUN_TEARDOWN);
             this._setSnippetsState(snippets, Snippet.INACTIVE);
 
+            this.trigger('teardown');
+
             for (var id in snippets) {
                 if (snippets.hasOwnProperty(id) && snippets[id]) {
                     delete this._.snippets[id];
@@ -405,6 +407,8 @@ _context.invoke('Nette.Page', function (DOM, Url, Snippet) {
                     }
                 }
             }
+
+            this.trigger('setup');
 
             this._setSnippetsState(this._.snippets, Snippet.PREPARE_SETUP);
             this._setSnippetsState(this._.snippets, Snippet.RUN_SETUP);
