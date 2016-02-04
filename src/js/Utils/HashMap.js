@@ -137,19 +137,23 @@ _context.invoke('Utils', function (Arrays, undefined) {
         },
 
         unshift: function (value) {
-            var n = arguments.length,
+            var values = Arrays.createFrom(arguments),
+                n = values.length,
                 i = 0,
-                keys = new Array(n),
-                values = Arrays.createFrom(arguments);
+                keys = new Array(n);
 
-            keys = keys.map(function() { return i++; });
-            keys.splice(0, 0, 0, 0);
-            values.splice(0, 0, 0, 0);
+            while (i < n) {
+                keys[i] = i++;
+            }
+
+            keys.unshift(0, 0);
+            values.unshift(0, 0);
 
             this._shiftKeys(0, this.length, n);
             this._.keys.splice.apply(this._.keys, keys);
             this._.values.splice.apply(this._.values, values);
             this._.nextNumeric += n;
+            this.length += n;
             return this;
 
         },
@@ -364,11 +368,14 @@ _context.invoke('Utils', function (Arrays, undefined) {
         },
 
         _shiftKeys: function (from, to, diff) {
-            for (var i = from; i < to; i++) {
-                if (typeof this._.keys[i] === 'number') {
-                    this._.keys[i] += diff;
+            while (from < to) {
+                if (typeof this._.keys[from] === 'number') {
+                    this._.keys[from] += diff;
 
                 }
+
+                from++;
+
             }
         },
 
