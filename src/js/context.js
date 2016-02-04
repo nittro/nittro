@@ -418,19 +418,19 @@ var _context = (function() {
 
         }
 
-        if (parent) {
-            if (typeof parent === 'string') {
-                parent = lookup(parent);
+        if (!parent) {
+            parent = Object;
 
-            }
-
-            var tmp = function () {};
-            tmp.prototype = parent.prototype;
-            constructor.prototype = new tmp();
-            constructor.prototype.constructor = constructor;
-            constructor.Super = parent;
+        } else if (typeof parent === 'string') {
+            parent = lookup(parent);
 
         }
+
+        var tmp = function () {};
+        tmp.prototype = parent.prototype;
+        constructor.prototype = new tmp();
+        constructor.prototype.constructor = constructor;
+        constructor.Super = parent;
 
         if (proto) {
             if (proto.hasOwnProperty('STATIC') && proto.STATIC) {

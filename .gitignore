@@ -101,4 +101,7 @@ crashlytics-build.properties
 # Node.js modules
 node_modules/
 
+# Bower components
+bower_components/
+
 # Created by .ignore support plugin (hsz.mobi)
