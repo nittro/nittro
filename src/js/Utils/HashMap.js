@@ -187,7 +187,7 @@ _context.invoke('Utils', function (Arrays, undefined) {
         },
 
         splice: function (from, remove) {
-            var values = Arrays.from(arguments),
+            var values = Arrays.createFrom(arguments),
                 keys = values.slice().map(function() { return -1; }),
                 removed, i;
 
