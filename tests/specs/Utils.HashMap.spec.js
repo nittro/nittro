@@ -210,4 +210,151 @@ describe('Utils.HashMap', function () {
         });
     });
 
+    describe('forEach()', function () {
+        it('should call the specified callback for every item in the HashMap', function () {
+            items = [];
+            testMap.forEach(function(value, key, map) {
+                expect(map).toBe(testMap);
+                expect(testMap.get(key)).toBe(value);
+                items.push(key);
+            });
+
+            expect(testMap._.keys).toEqual(items);
+
+        });
+    });
+
+    describe('walk()', function () {
+        it('should apply the specified callback to each item in the HashMap', function () {
+            items = [];
+
+            testMap.walk(function (value, key, map) {
+                expect(map).toBe(testMap);
+                expect(testMap.get(key)).toBe(value);
+
+                value = items.length;
+                items.push(value);
+                return value;
+            });
+
+            expect(testMap._.values).toEqual(items);
+
+        });
+
+        it('should walk the HashMap recursively if "recursive" is true', function () {
+            babyMap = new HashMap([7, 8, 9]);
+            testMap.push(babyMap);
+            items = 0;
+
+            testMap.walk(function (value) {
+                items++;
+            }, true);
+
+            expect(items).toBe(testMap.length + babyMap.length - 1);
+
+            babyMap = null;
+
+        });
+    });
+
+    describe('map()', function () {
+        it('should return a new HashMap processed by the specified callback', function () {
+            testMap = new HashMap([2, 4, 6]);
+
+            var mapped = testMap.map(function(value) {
+                return value + 1;
+            });
+
+            expect(mapped.length).toBe(testMap.length);
+            expect(mapped._.values).toEqual([3, 5, 7]);
+
+        });
+
+        it('should work recursively, too', function () {
+            babyMap = new HashMap([7, 8, 9]);
+            testMap.push(babyMap);
+
+            var mapped = testMap.map(function (value) {
+                return value + 1;
+            }, true);
+
+            expect(mapped.get(3)._.values).toEqual([8, 9, 10]);
+
+        });
+    });
+
+    describe('find()', function () {
+        it('should return the first item for which the specified "predicate" returns true', function () {
+            testMap = new HashMap(['a', 'b', 'c', 'd']);
+            expect(testMap.find(function(v) { return v === 'c'; })).toBe('c');
+        });
+
+        it('should return null if no matching item is found', function () {
+            expect(testMap.find(function(v) { return v === 'foo'; })).toBe(null);
+        });
+    });
+
+    describe('findKey()', function () {
+        it('should return the key of the first item for which "predicate" returns true', function () {
+            expect(testMap.findKey(function(v) { return v === 'c'; })).toBe(2);
+        });
+
+        it('should return null if no matching item is found', function () {
+            expect(testMap.findKey(function(v) { return v === 'foo'; })).toBe(null);
+        });
+    });
+
+    describe('some()', function () {
+        it('should return true if "predicate" returns true for at least one item', function () {
+            testMap = new HashMap(['a', 'b', 'c', 'd']);
+            expect(testMap.some(function(v) { return v === 'c'; })).toBe(true);
+        });
+
+        it('should return false if no matching item is found', function () {
+            expect(testMap.some(function(v) { return v === 'foo'; })).toBe(false);
+        });
+    });
+
+    describe('all()', function () {
+        it('should return true if "predicate" returns true for all items in the HashMap', function () {
+            testMap = new HashMap(['a', 'b', 'c', 'd']);
+            expect(testMap.all(function(v) { return typeof v === 'string'; })).toBe(true);
+        });
+
+        it('should return false if "predicate" doesn\'t return true for at least one item', function () {
+            expect(testMap.all(function(v) { return v !== 'c'; })).toBe(false);
+        });
+    });
+
+    describe('filter()', function () {
+        it('should return a new HashMap containing all items for which "predicate" returns true', function () {
+            var filtered = testMap.filter(function(v) { return v !== 'c'; });
+            expect(filtered._.values).toEqual(['a', 'b', 'd']);
+        });
+    });
+
+    describe('exportData', function () {
+        it('should return an object of all the items in the HashMap', function () {
+            testMap.set('item', 42);
+            expect(testMap.exportData()).toEqual({0: 'a', 1: 'b', 2: 'c', 3: 'd', item: 42});
+        });
+
+        it('should return an array if the HashMap contains only numeric keys', function () {
+            testMap.pop();
+            expect(testMap.exportData()).toEqual(['a', 'b', 'c', 'd']);
+        });
+    });
+
+    describe('getKeys()', function () {
+        it('should return an array containing all of the HashMap\'s keys', function () {
+            expect(testMap.getKeys()).toEqual(testMap._.keys);
+        });
+    });
+
+    describe('getValues()', function () {
+        it('should return an array containing all of the HashMap\'s values', function () {
+            expect(testMap.getValues()).toEqual(testMap._.values);
+        });
+    });
+
 });

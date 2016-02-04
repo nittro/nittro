@@ -273,15 +273,15 @@ _context.invoke('Utils', function (Arrays, undefined) {
 
         },
 
-        map: function (callback, thisArg, recursive) {
-            return this.clone(recursive).walk(callback, thisArg, recursive);
+        map: function (callback, recursive, thisArg) {
+            return this.clone(recursive).walk(callback, recursive, thisArg);
 
         },
 
-        walk: function (callback, thisArg, recursive) {
+        walk: function (callback, recursive, thisArg) {
             for (var i = 0; i < this.length; i++) {
                 if (recursive && this._.values[i] instanceof HashMap) {
-                    this._.values[i].walk(callback, thisArg, recursive);
+                    this._.values[i].walk(callback, recursive, thisArg);
 
                 } else {
                     this._.values[i] = callback.call(thisArg || null, this._.values[i], this._.keys[i], this);
