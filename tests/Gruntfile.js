@@ -45,7 +45,8 @@ module.exports = function (grunt) {
                 vendor: [
                     'bower_components/nette-forms/src/assets/netteForms.js'
                 ],
-                specs: 'specs/**.spec.js'
+                specs: 'specs/**.spec.js',
+                display: 'short'
             }
         }
     });
