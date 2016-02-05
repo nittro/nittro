@@ -410,6 +410,16 @@ var _context = (function() {
 
     };
 
+    var __ns = function () {
+        if (arguments.length) {
+            nsStack.unshift(arguments[0], arguments[1]);
+
+        } else {
+            nsStack.shift();
+            nsStack.shift();
+        }
+    };
+
     var extend = function (parent, constructor, proto) {
         if (!proto) {
             proto = constructor;
@@ -475,7 +485,8 @@ var _context = (function() {
         load: load,
         extend: extend,
         mixin: mixin,
-        register: register
+        register: register,
+        __ns: __ns
     };
 
 })();

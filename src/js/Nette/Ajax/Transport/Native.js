@@ -159,8 +159,7 @@ _context.invoke('Nette.Ajax.Transport', function (Response, FormData, Url) {
         },
 
         _formatData: function (request, xhr) {
-            var data = request.getData(),
-                reArr = /\[]$/;
+            var data = request.getData();
 
             if (data instanceof FormData) {
                 data = data.exportData(request.isGet() || request.isMethod('HEAD'));
