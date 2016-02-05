@@ -46,7 +46,8 @@ module.exports = function (grunt) {
                     'bower_components/nette-forms/src/assets/netteForms.js'
                 ],
                 specs: 'specs/**.spec.js',
-                display: 'short'
+                display: 'short',
+                summary: true
             }
         }
     });

@@ -19,7 +19,7 @@ _context.invoke('Utils', function(undefined) {
         },
 
         toString: function(s) {
-            return s === undefined ? 'undefined' : (typeof s === 'string' ? s : (s.toString !== undefined ? s.toString() : String(s)));
+            return s === undefined ? 'undefined' : (typeof s === 'string' ? s : (s.toString !== undefined ? s.toString() : Object.prototype.toString.call(s)));
 
         },
 
@@ -31,38 +31,42 @@ _context.invoke('Utils', function(undefined) {
         vsprintf: function(s, args) {
             var n = 0;
 
-            return s.replace(/(^|[^%](?:%%)*)%(?:(\d+)\$)?(\.\d+|\[.*?:.*?\])?([idsfa])/g, function(m, p, a, i, t) {
-                if (!a) {
-                    a = ++n;
-
-                } else {
-                    a = parseInt(a);
+            return s.replace(/%(?:(\d+)\$)?(\.\d+|\[.*?:.*?\])?([idsfa%])/g, function(m, a, p, f) {
+                if (f === '%') {
+                    return f;
 
                 }
 
-                a = args[a - 1];
+                a = a ? parseInt(a) - 1 : n++;
 
-                switch (t) {
+                if (args[a] === undefined) {
+                    throw new Error('Missing parameter #' + (a + 1));
+
+                }
+
+                a = args[a];
+
+                switch (f) {
                     case 's':
-                        return p + Strings.toString(a);
+                        return Strings.toString(a);
 
                     case 'i':
                     case 'd':
-                        return p + parseInt(a);
+                        return parseInt(a);
 
                     case 'f':
                         a = parseFloat(a);
 
-                        if (i && i.match(/^\.\d+$/)) {
-                            a = a.toFixed(parseInt(i.substr(1)));
+                        if (p && p.match(/^\.\d+$/)) {
+                            a = a.toFixed(parseInt(p.substr(1)));
 
                         }
 
-                        return p + a;
+                        return a;
 
                     case 'a':
-                        i = i && i.match(/^\[.*:.*\]$/) ? i.substr(1, i.length - 2).split(':') : [', ', ', '];
-                        return a.length === 0 ? '' : p + a.slice(0, -1).join(i[0]) + (a.length > 1 ? i[1] : '') + a[a.length - 1];
+                        p = p && p.match(/^\[.*:.*\]$/) ? p.substr(1, p.length - 2).split(':') : [', ', ', '];
+                        return a.length === 0 ? '' : a.slice(0, -1).join(p[0]) + (a.length > 1 ? p[1] : '') + a[a.length - 1];
 
                 }
 
@@ -109,7 +113,7 @@ _context.invoke('Utils', function(undefined) {
 
                 }
 
-                if (delimCapture && !m.match(/^[\t ]+$/)) {
+                if (delimCapture && (m.length && !m.match(/^[\t ]+$/) || !noEmpty)) {
                     r.push(offsetCapture ? [m, ofs] : m);
 
                 }
@@ -131,33 +135,33 @@ _context.invoke('Utils', function(undefined) {
         },
 
         trim: function(s, c) {
-            if (!c) {
-                c = " \t\n\r\0\x0B\xC2\xA0";
-
-            }
-
-            c = Strings.escapeRegex(c);
-            return s.replace(new RegExp('^[' + c + ']+|[' + c + ']+$', 'i'), '');
+            return Strings._trim(s, c, true, true);
 
         },
 
         trimLeft: function(s, c) {
-            if (!c) {
-                c = " \t\n\r\0\x0B\xC2\xA0";
-
-            }
-
-            return s.replace(new RegExp('^[' + Strings.escapeRegex(c) + ']+', 'i'), '');
+            return Strings._trim(s, c, true, false);
 
         },
 
         trimRight: function(s, c) {
+            return Strings._trim(s, c, false, true);
+
+        },
+
+        _trim: function (s, c, l, r) {
             if (!c) {
                 c = " \t\n\r\0\x0B\xC2\xA0";
 
             }
 
-            return s.replace(new RegExp('[' + Strings.escapeRegex(c) + ']+$', 'i'), '');
+            var re = [];
+            c = '[' + Strings.escapeRegex(c) + ']+';
+            l && re.push('^', c);
+            l && r && re.push('|');
+            r && re.push(c, '$');
+
+            return s.replace(new RegExp(re.join(''), 'ig'), '');
 
         },
 
@@ -223,9 +227,14 @@ _context.invoke('Utils', function(undefined) {
 
             });
 
-            var s = [], i = len || 8, n = chars.length - 1;
-            for (; i >= 0; i--) {
-                s.push(chars[Math.round(Math.random() * n)]);
+            len || (len = 8);
+
+            var s = new Array(len),
+                n = chars.length - 1,
+                i;
+
+            for (i = 0; i < len; i++) {
+                s[i] = chars[Math.round(Math.random() * n)];
 
             }
 
