@@ -1,6 +1,6 @@
 window._stack || (window._stack = []);
 
-(function() {
+(function(stack) {
     function exec(f) {
         if (typeof f === 'function') {
             _context.invoke(f);
@@ -21,39 +21,15 @@ window._stack || (window._stack = []);
         }
     }
 
-    function init() {
-        while (_stack.length) {
-            exec(_stack.shift());
+    while (stack.length) {
+        exec(stack.shift());
+
+    }
+
+    stack.push = function() {
+        for (var i = 0; i < arguments.length; i++) {
+            exec(arguments[i]);
 
         }
-
-        _stack.push = function() {
-            for (var i = 0; i < arguments.length; i++) {
-                exec(arguments[i]);
-
-            }
-        };
-    }
-
-    function check() {
-        if (typeof window._context !== 'undefined') {
-            init();
-            return true;
-
-        } else {
-            return false;
-
-        }
-    }
-
-    if (!check()) {
-        var tmr = window.setInterval(function() {
-            if (check()) {
-                window.clearInterval(tmr);
-                tmr = null;
-
-            }
-        }, 100);
-    }
-
-})();
+    };
+})(window._stack);
