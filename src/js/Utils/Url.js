@@ -281,7 +281,7 @@ _context.invoke('Utils', function(Strings, undefined) {
      * 8: hash
      * @type {RegExp}
      */
-    Url.PARSER_REGEXP = /^(?:([^:/]+:)?\/\/(?:([^\/@]+?)(?::([^\/@]+))?@)?([^/]+?)(?::(\d+))?(?=\/|$))?(.*?)(\?.*?)?(#.*)?$/;
+    Url.PARSER_REGEXP = /^(?:([^:/]+:)?\/\/(?:([^\/@]+?)(?::([^\/@]+))?@)?(?:([^/]+?)(?::(\d+))?(?=\/|$))?)?(.*?)(\?.*?)?(#.*)?$/;
     Url.PART = {
         PROTOCOL: 128,
         USERNAME: 64,
@@ -294,7 +294,7 @@ _context.invoke('Utils', function(Strings, undefined) {
     };
 
     Url.from = function(s) {
-        return s instanceof Url ? new Url(s.toAbsolute()) : new Url(typeof s === 'string' || s === null || s === undefined ? s : (s && s.toString !== undefined ? s.toString() : String(s)));
+        return s instanceof Url ? new Url(s.toAbsolute()) : new Url(typeof s === 'string' || s === null || s === undefined ? s : Strings.toString(s));
 
     };
 
