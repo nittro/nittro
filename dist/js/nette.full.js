@@ -4373,6 +4373,7 @@ _context.invoke('Nette.Page', function (DOM) {
             }
 
             DOM.addClass(elements, 'transition-active ' + className);
+            DOM.removeClass(elements, 'transition-middle');
 
             var promise = new Promise(function (resolve) {
                 window.setTimeout(function () {
@@ -4380,9 +4381,6 @@ _context.invoke('Nette.Page', function (DOM) {
 
                     if (className === 'transition-out') {
                         DOM.addClass(elements, 'transition-middle');
-
-                    } else {
-                        DOM.removeClass(elements, 'transition-middle');
 
                     }
 
