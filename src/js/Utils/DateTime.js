@@ -125,11 +125,37 @@ _context.invoke('Utils', function(Strings, Arrays, undefined) {
 
 	};
 
-	DateTime.prototype.getTime = function() {
-		this._initialize();
-		return this._.date.getTime();
+	[
+        'getTime',
+        'getDate', 'getDay', 'getMonth', 'getFullYear',
+        'getHours', 'getMinutes', 'getSeconds', 'getMilliseconds', 'getTimezoneOffset',
+        'getUTCDate', 'getUTCDay', 'getUTCMonth', 'getUTCFullYear',
+        'getUTCHours', 'getUTCMinutes', 'getUTCSeconds', 'getUTCMilliseconds',
+        'toDateString', 'toISOString', 'toJSON',
+        'toLocaleDateString', 'toLocaleFormat', 'toLocaleTimeString',
+        'toString', 'toTimeString', 'toUTCString'
+    ].forEach(function (method) {
+        DateTime.prototype[method] = function () {
+            this._initialize();
+            return this._.date[method].apply(this._.date, arguments);
 
-	};
+        };
+    });
+
+    [
+        'setTime',
+        'setDate', 'setMonth', 'setFullYear',
+        'setHours', 'setMinutes', 'setSeconds', 'setMilliseconds',
+        'setUTCDate', 'setUTCMonth', 'setUTCFullYear',
+        'setUTCHours', 'setUTCMinutes', 'setUTCSeconds', 'setUTCMilliseconds'
+    ].forEach(function (method) {
+        DateTime.prototype[method] = function () {
+            this._initialize();
+            this._.date[method].apply(this._.date, arguments);
+            return this;
+
+        };
+    });
 
 	DateTime.prototype.getTimestamp = function() {
 		this._initialize();
