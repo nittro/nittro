@@ -41,6 +41,12 @@ describe('Utils.ReflectionClass', function () {
         it('should return the fully qualified name of the provided constructor', function () {
             expect(ReflectionClass.getClassName(TestClass)).toBe('__Test.TestClass');
         });
+
+        it('should throw an error if the class is not found and "need" is true', function () {
+            expect(function() { return ReflectionClass.getClassName(3.14); }).toThrow(new Error('Cannot lookup class name of non-object'));
+            expect(function() { return ReflectionClass.getClassName({}, true); }).toThrow(new Error('Unknown class'));
+            expect(ReflectionClass.getClassName({})).toBe(false);
+        });
     });
 
     describe('hasProperty()', function () {
