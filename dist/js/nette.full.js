@@ -2766,8 +2766,15 @@ _context.invoke('Utils', function(undefined) {
 
     };
 
-    ReflectionClass.getClassName = function(obj) {
-        return _context.lookupClass(obj);
+    ReflectionClass.getClassName = function(obj, need) {
+        var className = _context.lookupClass(obj);
+
+        if (className === false && need) {
+            throw new Error('Unknown class');
+
+        }
+
+        return className;
 
     };
 
@@ -3132,13 +3139,7 @@ _context.invoke('Nette', function () {
             }
 
             if (this._.frozen) {
-                var className;
-
-                try {
-                    className = _context.lookupClass(this);
-                } catch (e) {
-                    className = 'object';
-                }
+                var className = _context.lookupClass(this) || 'object';
 
                 if (prop) {
                     prop = ' "' + prop + '"';
