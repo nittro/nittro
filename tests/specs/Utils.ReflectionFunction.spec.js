@@ -1,11 +1,14 @@
 describe('Utils.ReflectionFunction', function () {
 
-    var ReflectionFunction = _context.lookup('Utils.ReflectionFunction');
-    var testReflection;
+    var ReflectionFunction, testReflection, testFunction;
 
-    var testFunction = function(a, b, c) {
-        return Math.pow(a, b) / c;
-    };
+    beforeAll(function () {
+        ReflectionFunction = _context.lookup('Utils.ReflectionFunction');
+
+        testFunction = function(a, b, c) {
+            return Math.pow(a, b) / c;
+        };
+    });
 
     describe('from()', function () {
         it('should create a new ReflectionFunction instance', function () {

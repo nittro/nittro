@@ -1,6 +1,10 @@
 describe('Utils.DateTime', function () {
 
-    var DateTime = _context.lookup('Utils.DateTime');
+    var DateTime;
+
+    beforeAll(function () {
+        DateTime = _context.lookup('Utils.DateTime')
+    });
 
     describe('isLeapYear()', function () {
         it('should return true if a given year is a leap year', function () {

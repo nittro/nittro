@@ -1,6 +1,10 @@
 describe('Utils.Strings', function () {
 
-    var Strings = _context.lookup('Utils.Strings');
+    var Strings;
+
+    beforeAll(function () {
+        Strings = _context.lookup('Utils.Strings');
+    });
 
     describe('toString()', function () {
         it('should convert any value to a string', function () {

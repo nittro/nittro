@@ -1,7 +1,10 @@
 describe('Utils.Url', function () {
 
-    var Url = _context.lookup('Utils.Url'),
-        testUrl;
+    var Url, testUrl;
+
+    beforeAll(function () {
+        Url = _context.lookup('Utils.Url');
+    });
 
     describe('getDirName()', function () {
         it('should remove the last component from the specified path', function () {

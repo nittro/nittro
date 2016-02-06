@@ -1,15 +1,18 @@
 describe('Utils.DOM', function () {
 
+    var DOM, rootElem, listeners;
 
-    var DOM = _context.lookup('Utils.DOM');
+    beforeAll(function () {
+        DOM = _context.lookup('Utils.DOM');
 
-    var rootElem,
         listeners = {
             click: function () {}
         };
+    });
 
     afterAll(function () {
-        document.body.removeChild(rootElem);
+        rootElem && document.body.removeChild(rootElem);
+        rootElem = null;
     });
 
     describe('create()', function () {

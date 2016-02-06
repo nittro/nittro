@@ -1,7 +1,10 @@
 describe('Utils.HashMap', function () {
 
-    var HashMap = _context.lookup('Utils.HashMap'),
-        testMap, babyMap, items;
+    var HashMap, testMap, babyMap, items;
+
+    beforeAll(function () {
+        HashMap = _context.lookup('Utils.HashMap');
+    });
 
     describe('constructor', function () {
         it('should create a new HashMap instance', function () {

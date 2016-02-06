@@ -1,12 +1,20 @@
 describe('_context', function() {
 
-    var Person = _context.extend(function(name) {
-        this._name = name;
+    var Person, joe;
 
-    }, {
-        getName: function () {
-            return this._name;
-        }
+    beforeAll(function () {
+        Person = _context.extend(function(name) {
+            this._name = name;
+
+        }, {
+            getName: function () {
+                return this._name;
+            }
+        });
+
+        _context.register(Person, 'App.Entities.Person');
+        joe = new Person('Joe');
+
     });
 
     describe('extend()', function() {
@@ -16,9 +24,6 @@ describe('_context', function() {
 
         });
     });
-
-    _context.register(Person, 'App.Entities.Person');
-    var joe = new Person('Joe');
 
     describe('lookup()', function() {
         it('should retrieve an object from the internal registry', function () {

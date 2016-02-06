@@ -1,19 +1,22 @@
 describe('Utils.ReflectionClass', function () {
 
-    var ReflectionClass = _context.lookup('Utils.ReflectionClass');
+    var ReflectionClass, TestClass, testReflection;
 
-    var TestClass = _context.extend(function(a, b, c) {
-        this._ = [].slice.call(arguments);
-    }, {
-        getA: function () { return this._[0]; },
-        getB: function () { return this._[1]; },
-        getC: function () { return this._[2]; },
-        foo: true
+    beforeAll(function () {
+        ReflectionClass = _context.lookup('Utils.ReflectionClass');
+
+        TestClass = _context.extend(function(a, b, c) {
+            this._ = [].slice.call(arguments);
+        }, {
+            getA: function () { return this._[0]; },
+            getB: function () { return this._[1]; },
+            getC: function () { return this._[2]; },
+            foo: true
+        });
+
+        _context.register(TestClass, '__Test.TestClass');
+
     });
-
-    _context.register(TestClass, '__Test.TestClass');
-
-    var testReflection;
 
     describe('from()', function () {
         it('should create a new ReflectionClass instance', function () {
