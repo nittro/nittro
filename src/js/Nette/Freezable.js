@@ -39,13 +39,7 @@ _context.invoke('Nette', function () {
             }
 
             if (this._.frozen) {
-                var className;
-
-                try {
-                    className = _context.lookupClass(this);
-                } catch (e) {
-                    className = 'object';
-                }
+                var className = _context.lookupClass(this) || 'object';
 
                 if (prop) {
                     prop = ' "' + prop + '"';
