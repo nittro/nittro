@@ -288,11 +288,10 @@ var _context = (function() {
                         p = loading[u] = function (p, u) {
                             return new promise(function (f, r) {
                                 xhr(u).then(function (xhr) {
-                                    delete loading[u];
-                                    loaded.push(u);
-
                                     p.then(function () {
                                         exec(xhr.responseText, xhr.getResponseHeader('Content-Type'), u);
+                                        delete loading[u];
+                                        loaded.push(u);
                                         f();
 
                                     }, r);
