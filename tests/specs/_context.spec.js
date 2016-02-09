@@ -12,7 +12,7 @@ describe('_context', function() {
             }
         });
 
-        _context.register(Person, 'App.Entities.Person');
+        _context.register(Person, '__Test._context.Person');
         joe = new Person('Joe');
 
     });
@@ -27,20 +27,20 @@ describe('_context', function() {
 
     describe('lookup()', function() {
         it('should retrieve an object from the internal registry', function () {
-            expect(_context.lookup('App.Entities.Person')).toBe(Person);
+            expect(_context.lookup('__Test._context.Person')).toBe(Person);
         });
     });
 
     describe('lookupClass()', function () {
         it('should return the internal class name for an object', function () {
-            expect(_context.lookupClass(Person)).toBe('App.Entities.Person');
-            expect(_context.lookupClass(joe)).toBe('App.Entities.Person');
+            expect(_context.lookupClass(Person)).toBe('__Test._context.Person');
+            expect(_context.lookupClass(joe)).toBe('__Test._context.Person');
         });
     });
 
     describe('invoke()', function () {
         it('should invoke the callback within the specified namespace', function () {
-            _context.invoke('App.Entities', function () {
+            _context.invoke('__Test._context', function () {
                 expect(this.Person).toBe(Person);
             });
         });
@@ -48,7 +48,7 @@ describe('_context', function() {
         it('should import classes from the current namespace', function () {
             var _Person = Person;
 
-            _context.invoke('App.Entities', function(Person) {
+            _context.invoke('__Test._context', function(Person) {
                 expect(Person).toBe(_Person);
             });
         });
@@ -59,7 +59,7 @@ describe('_context', function() {
             _context.invoke(function(Person) {
                 expect(Person).toBe(_Person);
             }, {
-                Person: 'App.Entities.Person'
+                Person: '__Test._context.Person'
             });
         });
     });

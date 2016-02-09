@@ -94,7 +94,8 @@ _context.invoke('Nette.DI', function(Nette, ReflectionClass, ReflectionFunction,
 
         invoke: function (callback, args, thisArg) {
             prepare(this);
-            return callback.apply(thisArg || null, this._autowireArguments(callback, args));
+            args = this._autowireArguments(callback, args);
+            return callback.apply(thisArg || null, this._expandArguments(args));
 
         },
 
@@ -152,23 +153,38 @@ _context.invoke('Nette.DI', function(Nette, ReflectionClass, ReflectionFunction,
 
         },
 
-        _autowireArguments: function (callback, args) {
+        _autowireArguments: function (callback) {
             var argList = ReflectionFunction.from(callback).getArgs();
 
-            if (args && !(args instanceof HashMap)) {
-                args = new HashMap(args);
+            var args = Arrays.createFrom(arguments, 1)
+                .filter(function(arg) { return !!arg; })
+                .map(function (arg) {
+                    if (arg instanceof HashMap) {
+                        if (arg.isList()) {
+                            arg = HashMap.from(arg.getValues(), argList);
 
-            }
+                        }
+                    } else {
+                        arg = HashMap.from(arg, argList);
 
-            for (var i = 0; i < argList.length; i++) {
-                if (args) {
-                    if (args.has(argList[i])) {
-                        argList[i] = args.get(argList[i]);
-                        continue;
+                    }
 
-                    } else if (args.has(i)) {
-                        argList[i] = args.get(i);
-                        continue;
+                    return arg;
+
+                });
+
+            var i, a;
+
+            lookupArg:
+            for (i = 0; i < argList.length; i++) {
+                for (a = args.length - 1; a >= 0; a--) {
+                    if (args[a].has(argList[i])) {
+                        argList[i] = args[a].get(argList[i]);
+                        continue lookupArg;
+
+                    } else if (args[a].has(i)) {
+                        argList[i] = args[a].get(i);
+                        continue lookupArg;
 
                     }
                 }
@@ -222,7 +238,7 @@ _context.invoke('Nette.DI', function(Nette, ReflectionClass, ReflectionFunction,
             }
         },
 
-        _expandEntity: function (entity, context) {
+        _expandEntity: function (entity, context, mergeArgs) {
             var m, obj, method, args;
 
             if (m = entity.value.match(/^(?:(@)?([^:].*?))?(?:::(.+))?$/)) {
@@ -239,11 +255,11 @@ _context.invoke('Nette.DI', function(Nette, ReflectionClass, ReflectionFunction,
 
                 if (m[3] !== undefined) {
                     method = m[3];
-                    args = this._autowireArguments(obj[method], entity.attributes);
+                    args = this._autowireArguments(obj[method], entity.attributes, mergeArgs);
                     return obj[method].apply(obj, this._expandArguments(args));
 
                 } else if (!m[1]) {
-                    args = this._autowireArguments(obj, entity.attributes);
+                    args = this._autowireArguments(obj, entity.attributes, mergeArgs);
                     return ReflectionClass.from(obj).newInstanceArgs(this._expandArguments(args));
 
                 } else if (entity.attributes.length) {

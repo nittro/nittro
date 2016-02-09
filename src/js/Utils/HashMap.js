@@ -13,6 +13,38 @@ _context.invoke('Utils', function (Arrays, undefined) {
 
         }
     }, {
+        STATIC: {
+            from: function (data, keys) {
+                if (!keys) {
+                    return data instanceof HashMap ? data.clone() : new HashMap(data);
+
+                } else if (!Arrays.isArray(keys)) {
+                    throw new Error('Invalid argument supplied to HashMap.from(): the second argument must be an array');
+
+                }
+
+                var map = new HashMap(),
+                    i, n;
+
+                if (Arrays.isArray(data)) {
+                    n = Math.min(data.length, keys.length);
+
+                    for (i = 0; i < n; i++) {
+                        map.set(keys[i], data[i]);
+
+                    }
+                } else {
+                    for (i = 0; i < keys.length; i++) {
+                        map.set(keys[i], data[keys[i]]);
+
+                    }
+                }
+
+                return map;
+
+            }
+        },
+
         length: 0,
 
         isList: function () {

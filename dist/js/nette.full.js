@@ -1020,6 +1020,38 @@ _context.invoke('Utils', function (Arrays, undefined) {
 
         }
     }, {
+        STATIC: {
+            from: function (data, keys) {
+                if (!keys) {
+                    return data instanceof HashMap ? data.clone() : new HashMap(data);
+
+                } else if (!Arrays.isArray(keys)) {
+                    throw new Error('Invalid argument supplied to HashMap.from(): the second argument must be an array');
+
+                }
+
+                var map = new HashMap(),
+                    i, n;
+
+                if (Arrays.isArray(data)) {
+                    n = Math.min(data.length, keys.length);
+
+                    for (i = 0; i < n; i++) {
+                        map.set(keys[i], data[i]);
+
+                    }
+                } else {
+                    for (i = 0; i < keys.length; i++) {
+                        map.set(keys[i], data[keys[i]]);
+
+                    }
+                }
+
+                return map;
+
+            }
+        },
+
         length: 0,
 
         isList: function () {
@@ -5818,7 +5850,7 @@ _context.invoke('Nette.DI', function(Nette, ReflectionClass, ReflectionFunction,
 
         },
 
-        addDefinition: function (name, definition) {
+        addServiceDefinition: function (name, definition) {
             prepare(this);
 
             if (this._.services[name] || this._.serviceDefs[name]) {
@@ -5840,7 +5872,7 @@ _context.invoke('Nette.DI', function(Nette, ReflectionClass, ReflectionFunction,
 
             } else if (this._.services[name] === undefined) {
                 if (this._.serviceDefs[name]) {
-                    this._create(name);
+                    this._createService(name);
 
                 } else {
                     throw new Error('Container has no service named "' + name + '"');
@@ -5852,7 +5884,45 @@ _context.invoke('Nette.DI', function(Nette, ReflectionClass, ReflectionFunction,
 
         },
 
-        _create: function (name) {
+        hasService: function (name) {
+            prepare(this);
+            return name === 'container' || this._.services[name] !== undefined || this._.serviceDefs[name] !== undefined;
+
+        },
+
+        isServiceCreated: function (name) {
+            if (!this.hasService(name)) {
+                throw new Error('Container has no service named "' + name + '"');
+
+            }
+
+            return !!this._.services[name];
+
+        },
+
+        runServices: function () {
+            prepare(this);
+
+            var name, def;
+
+            for (name in this._.serviceDefs) {
+                def = this._.serviceDefs[name];
+
+                if (typeof def === 'string' && def.match(/!$/) || def.factory !== undefined && def.run) {
+                    this.getService(name);
+
+                }
+            }
+        },
+
+        invoke: function (callback, args, thisArg) {
+            prepare(this);
+            args = this._autowireArguments(callback, args);
+            return callback.apply(thisArg || null, this._expandArguments(args));
+
+        },
+
+        _createService: function (name) {
             if (!this._.serviceDefs[name]) {
                 throw new Error('Container has no service "' + name + '"');
 
@@ -5906,60 +5976,38 @@ _context.invoke('Nette.DI', function(Nette, ReflectionClass, ReflectionFunction,
 
         },
 
-        hasService: function (name) {
-            prepare(this);
-            return name === 'container' || this._.services[name] !== undefined || this._.serviceDefs[name] !== undefined;
-
-        },
-
-        isCreated: function (name) {
-            if (!this.hasService(name)) {
-                throw new Error('Container has no service named "' + name + '"');
-
-            }
-
-            return !!this._.services[name];
-
-        },
-
-        runServices: function () {
-            prepare(this);
-
-            var name, def;
-
-            for (name in this._.serviceDefs) {
-                def = this._.serviceDefs[name];
-
-                if (typeof def === 'string' && def.match(/!$/) || def.factory !== undefined && def.run) {
-                    this.getService(name);
-
-                }
-            }
-        },
-
-        invoke: function (callback, args, thisArg) {
-            prepare(this);
-            return callback.apply(thisArg || null, this._autowireArguments(callback, args));
-
-        },
-
-        _autowireArguments: function (callback, args) {
+        _autowireArguments: function (callback) {
             var argList = ReflectionFunction.from(callback).getArgs();
 
-            if (args && !(args instanceof HashMap)) {
-                args = new HashMap(args);
+            var args = Arrays.createFrom(arguments, 1)
+                .filter(function(arg) { return !!arg; })
+                .map(function (arg) {
+                    if (arg instanceof HashMap) {
+                        if (arg.isList()) {
+                            arg = HashMap.from(arg.getValues(), argList);
 
-            }
+                        }
+                    } else {
+                        arg = HashMap.from(arg, argList);
 
-            for (var i = 0; i < argList.length; i++) {
-                if (args) {
-                    if (args.has(argList[i])) {
-                        argList[i] = args.get(argList[i]);
-                        continue;
+                    }
 
-                    } else if (args.has(i)) {
-                        argList[i] = args.get(i);
-                        continue;
+                    return arg;
+
+                });
+
+            var i, a;
+
+            lookupArg:
+            for (i = 0; i < argList.length; i++) {
+                for (a = args.length - 1; a >= 0; a--) {
+                    if (args[a].has(argList[i])) {
+                        argList[i] = args[a].get(argList[i]);
+                        continue lookupArg;
+
+                    } else if (args[a].has(i)) {
+                        argList[i] = args[a].get(i);
+                        continue lookupArg;
 
                     }
                 }
@@ -6013,7 +6061,7 @@ _context.invoke('Nette.DI', function(Nette, ReflectionClass, ReflectionFunction,
             }
         },
 
-        _expandEntity: function (entity, context) {
+        _expandEntity: function (entity, context, mergeArgs) {
             var m, obj, method, args;
 
             if (m = entity.value.match(/^(?:(@)?([^:].*?))?(?:::(.+))?$/)) {
@@ -6030,11 +6078,11 @@ _context.invoke('Nette.DI', function(Nette, ReflectionClass, ReflectionFunction,
 
                 if (m[3] !== undefined) {
                     method = m[3];
-                    args = this._autowireArguments(obj[method], entity.attributes);
+                    args = this._autowireArguments(obj[method], entity.attributes, mergeArgs);
                     return obj[method].apply(obj, this._expandArguments(args));
 
                 } else if (!m[1]) {
-                    args = this._autowireArguments(obj, entity.attributes);
+                    args = this._autowireArguments(obj, entity.attributes, mergeArgs);
                     return ReflectionClass.from(obj).newInstanceArgs(this._expandArguments(args));
 
                 } else if (entity.attributes.length) {
@@ -6066,6 +6114,40 @@ _context.invoke('Nette.DI', function(Nette, ReflectionClass, ReflectionFunction,
 
 _context.invoke('Nette.DI', function(Container, Arrays, HashMap, ReflectionClass, NeonEntity, undefined) {
 
+    function traverse(cursor, path, create) {
+        if (typeof path === 'string') {
+            path = path.split(/\./g);
+
+        }
+
+        var i, p, n = path.length;
+
+        for (i = 0; i < n; i++) {
+            p = path[i];
+
+            if (Arrays.isArray(cursor) && p.match(/^\d+$/)) {
+                p = parseInt(p);
+
+            }
+
+            if (cursor[p] === undefined) {
+                if (create) {
+                    cursor[p] = {};
+
+                } else {
+                    return undefined;
+
+                }
+            }
+
+            cursor = cursor[p];
+
+        }
+
+        return cursor;
+
+    }
+
     var Context = _context.extend(function(config) {
         config || (config = {});
 
@@ -6078,65 +6160,33 @@ _context.invoke('Nette.DI', function(Container, Arrays, HashMap, ReflectionClass
 
     }, {
         hasParam: function(name) {
-            name = name.split('.');
-            var p = this._.params,
-                n;
-
-            while (name.length) {
-                n = name.shift();
-
-                if (p[n] === undefined) {
-                    return false;
-
-                }
-
-                p = p[n];
-
-            }
-
-            return p !== undefined;
+            return traverse(this._.params, name) !== undefined;
 
         },
 
         getParam: function(name, def) {
-            name = name.split('.');
-            var p = this._.params,
-                n;
-
-            while (name.length) {
-                n = name.shift();
-
-                if (p[n] === undefined) {
-                    return def || null;
-
-                }
-
-                p = p[n];
-
-            }
-
-            return p;
+            var value = traverse(this._.params, name);
+            return value !== undefined ? value : (def !== undefined ? def : null);
 
         },
 
         setParam: function(name, value) {
-            name = name.split('.');
-            var p = this._.params,
-                n;
+            name = name.split(/\./g);
 
-            while (name.length > 1) {
-                n = name.shift();
+            var p = name.pop(),
+                cursor = this._.params;
 
-                if (p[n] === undefined) {
-                    p[n] = {};
-
-                }
-
-                p = p[n];
+            if (name.length) {
+                cursor = traverse(cursor, name, true);
 
             }
 
-            p[name.shift()] = value;
+            if (Arrays.isArray(cursor) && p.match(/^\d+$/)) {
+                p = parseInt(p);
+
+            }
+
+            cursor[p] = value;
 
             return this;
 
@@ -6147,11 +6197,16 @@ _context.invoke('Nette.DI', function(Container, Arrays, HashMap, ReflectionClass
 
         },
 
-        addFactory: function(name, callback, params) {
-            this._.factories[name] = {
-                params: params || null,
-                callback: callback
-            };
+        addFactory: function(name, factory, params) {
+            if (typeof factory === 'string') {
+                this._.factories[name] = factory;
+
+            } else {
+                this._.factories[name] = {
+                    callback: factory,
+                    params: params || null
+                };
+            }
 
             return this;
 
@@ -6174,12 +6229,11 @@ _context.invoke('Nette.DI', function(Container, Arrays, HashMap, ReflectionClass
             }
 
             if (factory instanceof NeonEntity) {
-                args = factory.attributes.clone().merge(args || []);
-                return this._expandEntity(new NeonEntity(factory.value, args));
+                return this._expandEntity(factory, null, args);
 
             } else {
-                args = factory.params.clone().merge(args || []);
-                return this.invoke(factory.callback, args);
+                args = this._autowireArguments(factory.callback, factory.params, args);
+                return factory.callback.apply(null, this._expandArguments(args));
 
             }
         },

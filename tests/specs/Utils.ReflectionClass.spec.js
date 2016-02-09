@@ -14,7 +14,7 @@ describe('Utils.ReflectionClass', function () {
             foo: true
         });
 
-        _context.register(TestClass, '__Test.TestClass');
+        _context.register(TestClass, '__Test.Utils.ReflectionClass.TestClass');
 
     });
 
@@ -32,14 +32,14 @@ describe('Utils.ReflectionClass', function () {
 
     describe('getClass()', function () {
         it('should return the specified class\'s constructor', function () {
-            var testClassLetsHope = ReflectionClass.getClass('__Test.TestClass');
+            var testClassLetsHope = ReflectionClass.getClass('__Test.Utils.ReflectionClass.TestClass');
             expect(testClassLetsHope).toBe(TestClass);
         });
     });
 
     describe('getClassName()', function () {
         it('should return the fully qualified name of the provided constructor', function () {
-            expect(ReflectionClass.getClassName(TestClass)).toBe('__Test.TestClass');
+            expect(ReflectionClass.getClassName(TestClass)).toBe('__Test.Utils.ReflectionClass.TestClass');
         });
 
         it('should throw an error if the class is not found and "need" is true', function () {

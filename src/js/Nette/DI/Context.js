@@ -1,5 +1,39 @@
 _context.invoke('Nette.DI', function(Container, Arrays, HashMap, ReflectionClass, NeonEntity, undefined) {
 
+    function traverse(cursor, path, create) {
+        if (typeof path === 'string') {
+            path = path.split(/\./g);
+
+        }
+
+        var i, p, n = path.length;
+
+        for (i = 0; i < n; i++) {
+            p = path[i];
+
+            if (Arrays.isArray(cursor) && p.match(/^\d+$/)) {
+                p = parseInt(p);
+
+            }
+
+            if (cursor[p] === undefined) {
+                if (create) {
+                    cursor[p] = {};
+
+                } else {
+                    return undefined;
+
+                }
+            }
+
+            cursor = cursor[p];
+
+        }
+
+        return cursor;
+
+    }
+
     var Context = _context.extend(function(config) {
         config || (config = {});
 
@@ -12,65 +46,33 @@ _context.invoke('Nette.DI', function(Container, Arrays, HashMap, ReflectionClass
 
     }, {
         hasParam: function(name) {
-            name = name.split('.');
-            var p = this._.params,
-                n;
-
-            while (name.length) {
-                n = name.shift();
-
-                if (p[n] === undefined) {
-                    return false;
-
-                }
-
-                p = p[n];
-
-            }
-
-            return p !== undefined;
+            return traverse(this._.params, name) !== undefined;
 
         },
 
         getParam: function(name, def) {
-            name = name.split('.');
-            var p = this._.params,
-                n;
-
-            while (name.length) {
-                n = name.shift();
-
-                if (p[n] === undefined) {
-                    return def || null;
-
-                }
-
-                p = p[n];
-
-            }
-
-            return p;
+            var value = traverse(this._.params, name);
+            return value !== undefined ? value : (def !== undefined ? def : null);
 
         },
 
         setParam: function(name, value) {
-            name = name.split('.');
-            var p = this._.params,
-                n;
+            name = name.split(/\./g);
 
-            while (name.length > 1) {
-                n = name.shift();
+            var p = name.pop(),
+                cursor = this._.params;
 
-                if (p[n] === undefined) {
-                    p[n] = {};
-
-                }
-
-                p = p[n];
+            if (name.length) {
+                cursor = traverse(cursor, name, true);
 
             }
 
-            p[name.shift()] = value;
+            if (Arrays.isArray(cursor) && p.match(/^\d+$/)) {
+                p = parseInt(p);
+
+            }
+
+            cursor[p] = value;
 
             return this;
 
@@ -81,11 +83,16 @@ _context.invoke('Nette.DI', function(Container, Arrays, HashMap, ReflectionClass
 
         },
 
-        addFactory: function(name, callback, params) {
-            this._.factories[name] = {
-                params: params || null,
-                callback: callback
-            };
+        addFactory: function(name, factory, params) {
+            if (typeof factory === 'string') {
+                this._.factories[name] = factory;
+
+            } else {
+                this._.factories[name] = {
+                    callback: factory,
+                    params: params || null
+                };
+            }
 
             return this;
 
@@ -108,12 +115,11 @@ _context.invoke('Nette.DI', function(Container, Arrays, HashMap, ReflectionClass
             }
 
             if (factory instanceof NeonEntity) {
-                args = factory.attributes.clone().merge(args || []);
-                return this._expandEntity(new NeonEntity(factory.value, args));
+                return this._expandEntity(factory, null, args);
 
             } else {
-                args = factory.params.clone().merge(args || []);
-                return this.invoke(factory.callback, args);
+                args = this._autowireArguments(factory.callback, factory.params, args);
+                return factory.callback.apply(null, this._expandArguments(args));
 
             }
         },

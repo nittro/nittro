@@ -25,7 +25,7 @@ describe('Nette.DI.Container', function () {
             return this;
         };
 
-        _context.register(TestService, '__Test.TestService');
+        _context.register(TestService, '__Test.Nette.DI.Container.TestService');
 
     });
 
@@ -81,7 +81,7 @@ describe('Nette.DI.Container', function () {
         });
 
         it('should accept a string as a service definition', function () {
-            testInstance.addServiceDefinition('testService2', '__Test.TestService("splat")');
+            testInstance.addServiceDefinition('testService2', '__Test.Nette.DI.Container.TestService("splat")');
 
             expect(testInstance.hasService('testService2')).toBe(true);
             expect(testInstance.isServiceCreated('testService2')).toBe(false);
@@ -94,10 +94,10 @@ describe('Nette.DI.Container', function () {
 
     describe('runServices()', function () {
         it('should create any services which have the "run" flag set to true and haven\'t been created yet', function () {
-            testInstance.addServiceDefinition('testService1', { factory: '__Test.TestService("splat")', run: true });
-            testInstance.addServiceDefinition('testService2', '__Test.TestService("blurp")!');
-            testInstance.addServiceDefinition('testService3', { factory: '__Test.TestService("non-splat")' });
-            testInstance.addServiceDefinition('testService4', '__Test.TestService("unblurp")');
+            testInstance.addServiceDefinition('testService1', { factory: '__Test.Nette.DI.Container.TestService("splat")', run: true });
+            testInstance.addServiceDefinition('testService2', '__Test.Nette.DI.Container.TestService("blurp")!');
+            testInstance.addServiceDefinition('testService3', { factory: '__Test.Nette.DI.Container.TestService("non-splat")' });
+            testInstance.addServiceDefinition('testService4', '__Test.Nette.DI.Container.TestService("unblurp")');
 
             testInstance.runServices();
 
