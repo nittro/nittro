@@ -1,4 +1,4 @@
-_context.invoke('Utils', function(Strings, Arrays, undefined) {
+_context.invoke('Utils', function(Strings, Arrays, DateInterval, undefined) {
 
 	var DateTime = function(d) {
 		this._ = {
@@ -7,16 +7,25 @@ _context.invoke('Utils', function(Strings, Arrays, undefined) {
 		};
 	};
 
-	DateTime.names = {
-		weekdays: {
-			abbrev: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
-			full: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
-		},
-		months: {
-			abbrev: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-			full: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
-		}
-	};
+    DateTime.keywords = {
+        weekdays: {
+            abbrev: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+            full: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+        },
+        months: {
+            abbrev: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+            full: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+        },
+        relative: {
+            now: 'now',
+            today: 'today',
+            tomorrow: 'tomorrow',
+            yesterday: 'yesterday',
+            noon: 'noon',
+            midnight: 'midnight',
+            at: 'at'
+        }
+    };
 
 	DateTime.from = function(s) {
 		return new DateTime(s);
@@ -36,6 +45,12 @@ _context.invoke('Utils', function(Strings, Arrays, undefined) {
 		return y % 4 === 0 && y % 100 !== 0 || y % 400 === 0;
 
 	};
+
+    DateTime.isModifyString = function (str) {
+        var kw = DateTime.keywords.relative,
+            re = new RegExp('(?:^(?:' + [kw.now, kw.yesterday, kw.tomorrow, kw.today].map(Strings.escapeRegex).join('|') + '))|' + Strings.escapeRegex(kw.noon) + '|' + Strings.escapeRegex(kw.midnight) + '|\\d?\\d(?::\\d\\d|\\s*(?:am|pm))(?:\\d\\d)?(?:\\s*(?:am|pm))?|(?:[-+]\\s*)?\\d+\\s+[^\\d\\s]', 'i');
+        return re.test(str);
+    };
 
 	DateTime.getDaysInMonth = function(m, y) {
 		return m === 2 ? (DateTime.isLeapYear(y) ? 29 : 28) : (m in {4:1,6:1,9:1,11:1} ? 30 : 31);
@@ -69,17 +84,17 @@ _context.invoke('Utils', function(Strings, Arrays, undefined) {
 
 	DateTime.formatModifiers = {
 		d: function(d, u) { return pad(u ? d.getUTCDate() : d.getDate()); },
-		D: function(d, u) { return DateTime.names.weekdays.abbrev[u ? d.getUTCDay() : d.getDay()]; },
+		D: function(d, u) { return DateTime.keywords.weekdays.abbrev[u ? d.getUTCDay() : d.getDay()]; },
 		j: function(d, u) { return u ? d.getUTCDate() : d.getDate(); },
-		l: function(d, u) { return DateTime.names.weekdays.full[u ? d.getUTCDay() : d.getDay()]; },
+		l: function(d, u) { return DateTime.keywords.weekdays.full[u ? d.getUTCDay() : d.getDay()]; },
 		N: function(d, u, n) { n = u ? d.getUTCDay() : d.getDay(); return n === 0 ? 7 : n; },
 		S: function(d, u, n) { n = u ? d.getUTCDate() : d.getDate(); n %= 10; return n === 0 || n > 3 ? 'th' : ['st', 'nd', 'rd'][n - 1]; },
 		w: function(d, u) { return u ? d.getUTCDay() : d.getDay(); },
 		z: function(d, u, n, m, y, M) { n = u ? d.getUTCDate() : d.getDate(); n--; y = u ? d.getUTCFullYear() : d.getFullYear(); m = 0; M = u ? d.getUTCMonth() : d.getMonth(); while (m < M) n += DateTime.getDaysInMonth(m++, y); return n; },
 		W: ni,
-		F: function(d, u) { return DateTime.names.months.full[u ? d.getUTCMonth() : d.getMonth()]; },
+		F: function(d, u) { return DateTime.keywords.months.full[u ? d.getUTCMonth() : d.getMonth()]; },
 		m: function(d, u) { return pad((u ? d.getUTCMonth() : d.getMonth()) + 1); },
-		M: function(d, u) { return DateTime.names.months.abbrev[u ? d.getUTCMonth() : d.getMonth()]; },
+		M: function(d, u) { return DateTime.keywords.months.abbrev[u ? d.getUTCMonth() : d.getMonth()]; },
 		n: function(d, u) { return (u ? d.getUTCMonth() : d.getMonth()) + 1; },
 		t: function(d, u) { return DateTime.getDaysInMonth(u ? d.getUTCMonth() : d.getMonth(), u ? d.getUTCFullYear() : d.getFullYear()); },
 		L: function(d, u) { return DateTime.isLeapYear(u ? d.getUTCFullYear() : d.getFullYear()) ? 1 : 0; },
@@ -176,45 +191,56 @@ _context.invoke('Utils', function(Strings, Arrays, undefined) {
 
 	DateTime.prototype.modify = function(s) {
 		this._initialize();
-		var d = 1, t = this._.date.getTime(), r;
+		var t = this._.date.getTime(), r,
+            re, kw = DateTime.keywords.relative;
+
+        if (s instanceof DateInterval) {
+            this._.date = new Date(t + s.getLength());
+            return this;
+
+        }
 
 		s = s.toLowerCase();
 
-		if (r = s.match(/^(yesterday|tomorrow|now|today)\s*(?:at\s*)?/)) {
+        re = new RegExp('^(' + [kw.yesterday, kw.tomorrow, kw.now, kw.today].map(Strings.escapeRegex).join('|') + ')\\s*(?:' + Strings.escapeRegex(kw.at) + '\\s*)?');
+
+		if (r = s.match(re)) {
 			s = s.substr(r[0].length);
 
 			switch (r[1]) {
-				case 'now':
-				case 'today':
+				case kw.now:
+				case kw.today:
 					t = Date.now();
 					break;
 
-				case 'yesterday':
+				case kw.yesterday:
 					t -= 86400000;
 					break;
 
-				case 'tomorrow':
+				case kw.tomorrow:
 					t += 86400000;
 					break;
 
 			}
 		}
 
-		if (r = s.match(/^(noon|midnight|\d\d?:\d\d(?::\d\d)?(?:\s*(?:am|pm))?)\s*/)) {
+        re = new RegExp('^(' + Strings.escapeRegex(kw.noon) + '|' + Strings.escapeRegex(kw.midnight) + '|\\d\\d?(?::\\d\\d|\\s*(?:am|pm))(?::\\d\\d)?(?:\\s*(?:am|pm))?)\\s*');
+
+        if (r = s.match(re)) {
 			s = s.substr(r[0].length);
 
 			t = new Date(t);
 
-			if (r[1] === 'noon') {
+			if (r[1] === kw.noon) {
 				t.setHours(12, 0, 0, 0);
 
-			} else if (r[1] === 'midnight') {
+			} else if (r[1] === kw.midnight) {
 				t.setHours(0, 0, 0, 0);
 
 			} else {
-				r = r[1].match(/^(\d\d?):(\d\d)(?::(\d\d))?(?:\s*(am|pm))?$/);
+				r = r[1].match(/^(\d\d?)(?::(\d\d))?(?::(\d\d))?(?:\s*(am|pm))?$/);
 				r[1] = parseInt(r[1]);
-				r[2] = parseInt(r[2]);
+				r[2] = r[2] ? parseInt(r[2]) : 0;
 				r[3] = r[3] ? parseInt(r[3]) : 0;
 
 				if (r[4]) {
@@ -235,40 +261,10 @@ _context.invoke('Utils', function(Strings, Arrays, undefined) {
 
 		}
 
-		s.replace(/(\+|-)?\s*(\d+)\s+(\S+)/g, function(m, g, n, u) {
-			if (g !== undefined) {
-				d = g === '-' ? -1 : 1;
+        if (s.length && !s.match(/^\s+$/)) {
+            t += DateInterval.from(s).getLength();
 
-			}
-
-			n = parseInt(n) * d;
-
-			switch(u.substr(0, 3)) {
-				case 'yea':
-					n *= 31536000000;
-					break;
-
-				case 'wee':
-					n *= 604800000;
-					break;
-
-				case 'mon':
-					n *= 31;
-				case 'day':
-					n *= 24;
-				case 'hou':
-					n *= 60;
-				case 'min':
-					n *= 60;
-				case 'sec':
-					n *= 1000;
-					break;
-			}
-
-			t += n;
-			return '';
-
-		});
+        }
 
 		this._.date = new Date(t);
 		return this;
@@ -297,7 +293,7 @@ _context.invoke('Utils', function(Strings, Arrays, undefined) {
 			} else if (m = this._.date.match(/^(\d\d\d\d-\d\d-\d\d)[ T](\d\d:\d\d(?::\d\d(?:\.\d+)?)?)([-+]\d\d:?\d\d)?$/)) {
 				this._.date = new Date(m[1] + 'T' + m[2] + (m[3] || ''));
 
-			} else if (this._.date.match(/(?:^(?:now|yesterday|tomorrow|today))|noon|midnight|\d?\d:\d\d(?:\d\d)?(?:\s*(?:am|pm))?|min|hour|sec|day|week|month|year/i)) {
+			} else if (DateTime.isModifyString(this._.date)) {
 				var s = this._.date;
 				this._.date = new Date();
 				this.modify(s);

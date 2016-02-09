@@ -8,6 +8,7 @@ module.exports = function (grunt) {
                 '../src/js/Utils/Strings.js',
                 '../src/js/Utils/Arrays.js',
                 '../src/js/Utils/HashMap.js',
+                '../src/js/Utils/DateInterval.js',
                 '../src/js/Utils/DateTime.js',
                 '../src/js/Utils/Url.js',
                 '../src/js/Utils/DOM.js',
