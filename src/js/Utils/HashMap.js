@@ -24,18 +24,15 @@ _context.invoke('Utils', function (Arrays, undefined) {
                 }
 
                 var map = new HashMap(),
-                    i, n;
+                    i, n = keys.length,
+                    k,
+                    arr = Arrays.isArray(data);
 
-                if (Arrays.isArray(data)) {
-                    n = Math.min(data.length, keys.length);
+                for (i = 0; i < n; i++) {
+                    k = arr ? i : keys[i];
 
-                    for (i = 0; i < n; i++) {
-                        map.set(keys[i], data[i]);
-
-                    }
-                } else {
-                    for (i = 0; i < keys.length; i++) {
-                        map.set(keys[i], data[keys[i]]);
+                    if (data[k] !== undefined) {
+                        map.set(keys[i], data[k]);
 
                     }
                 }
