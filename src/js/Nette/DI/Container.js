@@ -27,7 +27,7 @@ _context.invoke('Nette.DI', function(Nette, ReflectionClass, ReflectionFunction,
 
         },
 
-        addDefinition: function (name, definition) {
+        addServiceDefinition: function (name, definition) {
             prepare(this);
 
             if (this._.services[name] || this._.serviceDefs[name]) {
@@ -49,7 +49,7 @@ _context.invoke('Nette.DI', function(Nette, ReflectionClass, ReflectionFunction,
 
             } else if (this._.services[name] === undefined) {
                 if (this._.serviceDefs[name]) {
-                    this._create(name);
+                    this._createService(name);
 
                 } else {
                     throw new Error('Container has no service named "' + name + '"');
@@ -61,7 +61,44 @@ _context.invoke('Nette.DI', function(Nette, ReflectionClass, ReflectionFunction,
 
         },
 
-        _create: function (name) {
+        hasService: function (name) {
+            prepare(this);
+            return name === 'container' || this._.services[name] !== undefined || this._.serviceDefs[name] !== undefined;
+
+        },
+
+        isServiceCreated: function (name) {
+            if (!this.hasService(name)) {
+                throw new Error('Container has no service named "' + name + '"');
+
+            }
+
+            return !!this._.services[name];
+
+        },
+
+        runServices: function () {
+            prepare(this);
+
+            var name, def;
+
+            for (name in this._.serviceDefs) {
+                def = this._.serviceDefs[name];
+
+                if (typeof def === 'string' && def.match(/!$/) || def.factory !== undefined && def.run) {
+                    this.getService(name);
+
+                }
+            }
+        },
+
+        invoke: function (callback, args, thisArg) {
+            prepare(this);
+            return callback.apply(thisArg || null, this._autowireArguments(callback, args));
+
+        },
+
+        _createService: function (name) {
             if (!this._.serviceDefs[name]) {
                 throw new Error('Container has no service "' + name + '"');
 
@@ -112,43 +149,6 @@ _context.invoke('Nette.DI', function(Nette, ReflectionClass, ReflectionFunction,
             }
 
             return service;
-
-        },
-
-        hasService: function (name) {
-            prepare(this);
-            return name === 'container' || this._.services[name] !== undefined || this._.serviceDefs[name] !== undefined;
-
-        },
-
-        isCreated: function (name) {
-            if (!this.hasService(name)) {
-                throw new Error('Container has no service named "' + name + '"');
-
-            }
-
-            return !!this._.services[name];
-
-        },
-
-        runServices: function () {
-            prepare(this);
-
-            var name, def;
-
-            for (name in this._.serviceDefs) {
-                def = this._.serviceDefs[name];
-
-                if (typeof def === 'string' && def.match(/!$/) || def.factory !== undefined && def.run) {
-                    this.getService(name);
-
-                }
-            }
-        },
-
-        invoke: function (callback, args, thisArg) {
-            prepare(this);
-            return callback.apply(thisArg || null, this._autowireArguments(callback, args));
 
         },
 
