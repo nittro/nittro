@@ -1,6 +1,4 @@
-window._stack || (window._stack = []);
-
-_stack.push(function(Nette) {
+_context.invoke(function(Nette) {
 
     Nette.Widgets.DialogBase.setDefaults({
         layer: document.body
