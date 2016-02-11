@@ -1,0 +1,26 @@
+{
+    "name": "NetteJS",
+    "homepage": "https://github.com/jahudka/nettejs",
+    "authors": [
+        "Dan Kadera <me@subsonic.cz>"
+    ],
+    "description": "NetteJS is a client-side companion for the Nette PHP framework",
+    "repository": {
+        "type": "vcs",
+        "url": "git://github.com/jahudka/nettejs.git"
+    },
+    "keywords": [
+        "nette",
+        "nettejs",
+        "javascript",
+        "ajax"
+    ],
+    "license": "MIT",
+    "ignore": [
+        "**/.*",
+        "node_modules",
+        "bower_components",
+        "test",
+        "tests"
+    ]
+}

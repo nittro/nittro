@@ -1,7 +1,11 @@
 {
-  "name": "jahudka/nettejs",
-  "description": "JavaScript client-side library to use with the Nette framework",
-  "authors": [
-    { "name": "Dan Kadera", "email": "me@subsonic.cz", "role": "Developer" }
-  ]
+    "name": "jahudka/nettejs",
+    "description": "JavaScript client-side library to use with the Nette framework",
+    "authors": [
+        {
+            "name": "Dan Kadera",
+            "email": "me@subsonic.cz",
+            "role": "Developer"
+        }
+    ]
 }
