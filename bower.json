@@ -16,6 +16,9 @@
         "ajax"
     ],
     "license": "MIT",
+    "dependencies": {
+        "nette-forms": "~2.3.7"
+    },
     "ignore": [
         "**/.*",
         "node_modules",

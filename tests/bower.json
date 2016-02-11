@@ -1,6 +1,0 @@
-{
-  "name": "nettejs tests",
-  "dependencies": {
-    "nette-forms": "~2.3.7"
-  }
-}
