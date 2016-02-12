@@ -92,9 +92,13 @@ describe('Utils.DateTime', function () {
             now.setHours(12, 0, 0, 0);
             expect(testDate.getTime()).toBe(now.getTime());
 
-            testDate = new DateTime(new Date(1454663100000));
+            now = new Date();
+            testDate = new DateTime(now);
             testDate.modify('tomorrow 15:00');
-            expect(testDate.getTimestamp()).toBe(1454767200);
+
+            now.setDate(now.getDate() + 1);
+            now.setHours(15, 0, 0, 0);
+            expect(testDate.getTime()).toBe(now.getTime());
 
         });
 
