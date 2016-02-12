@@ -17,7 +17,8 @@
     ],
     "license": "MIT",
     "dependencies": {
-        "nette-forms": "~2.3.7"
+        "nette-forms": "^2.3.7",
+        "promiz": "^1.0.6"
     },
     "ignore": [
         "**/.*",
