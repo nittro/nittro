@@ -5,18 +5,25 @@ _context.invoke('Nette.Page', function (DOM) {
             duration: duration || false,
             ready: true,
             queue: [],
-            support: false
+            support: false,
+            property: null
         };
 
         try {
             var s = DOM.create('span').style;
 
-            this._.support =
-                'transition' in s ||
-                'WebkitTransition' in s ||
-                'MozTransition' in s ||
-                'msTransition' in s ||
-                'OTransition' in s;
+            this._.support = [
+                'transition',
+                'WebkitTransition',
+                'MozTransition',
+                'msTransition',
+                'OTransition'
+            ].some(function(prop) {
+                if (prop in s) {
+                    this._.property = prop;
+                    return true;
+                }
+            }.bind(this));
 
             s = null;
 
@@ -100,13 +107,14 @@ _context.invoke('Nette.Page', function (DOM) {
 
             }
 
-            var durations = [];
+            var durations = [],
+                prop = this._.property + 'Duration';
 
             elements.forEach(function (elem) {
-                var duration = window.getComputedStyle(elem).transitionDuration;
+                var duration = window.getComputedStyle(elem)[prop];
 
                 if (duration) {
-                    duration = duration.trim().split(/\s*,\s*/g).map(function (v) {
+                    duration = (duration + '').trim().split(/\s*,\s*/g).map(function (v) {
                         v = v.match(/^(\d+)(m?s)$/);
 
                         if (v) {
@@ -114,6 +122,7 @@ _context.invoke('Nette.Page', function (DOM) {
 
                         } else {
                             return 0;
+
                         }
                     });
 
