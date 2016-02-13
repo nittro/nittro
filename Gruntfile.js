@@ -66,7 +66,8 @@ module.exports = function (grunt) {
             full: {
                 files: {
                     'dist/js/nette.full.js': [
-                        'bower_components/promiz/promiz.min.js'
+                        'bower_components/promiz/promiz.min.js',
+                        'dist/js/netteForms.js'
                     ].concat(
                         NetteJS,
                         'src/js/bootstrap.js',

@@ -61,6 +61,8 @@ _context.invoke('Nette.Page', function (DOM) {
             DOM.addClass(elements, 'transition-active ' + className);
             DOM.removeClass(elements, 'transition-middle');
 
+            var duration = this._getDuration(elements);
+
             var promise = new Promise(function (resolve) {
                 window.setTimeout(function () {
                     DOM.removeClass(elements, 'transition-active ' + className);
@@ -74,7 +76,7 @@ _context.invoke('Nette.Page', function (DOM) {
 
                     resolve(elements);
 
-                }.bind(this), this._.duration);
+                }.bind(this), duration);
             }.bind(this));
 
             promise.then(function () {
@@ -90,6 +92,43 @@ _context.invoke('Nette.Page', function (DOM) {
 
             return promise;
 
+        },
+
+        _getDuration: function (elements) {
+            if (!window.getComputedStyle) {
+                return this._.duration;
+
+            }
+
+            var durations = [];
+
+            elements.forEach(function (elem) {
+                var duration = window.getComputedStyle(elem).transitionDuration;
+
+                if (duration) {
+                    duration = duration.trim().split(/\s*,\s*/g).map(function (v) {
+                        v = v.match(/^(\d+)(m?s)$/);
+
+                        if (v) {
+                            return parseFloat(v[1]) * (v[2] === 'ms' ? 1 : 1000);
+
+                        } else {
+                            return 0;
+                        }
+                    });
+
+                    durations.push.apply(durations, duration.filter(function(v) { return v > 0; }));
+
+                }
+            });
+
+            if (durations.length) {
+                return Math.max.apply(null, durations);
+
+            } else {
+                return this._.duration;
+
+            }
         }
     });
 
