@@ -115,7 +115,7 @@ _context.invoke('Nette.Page', function (DOM) {
 
                 if (duration) {
                     duration = (duration + '').trim().split(/\s*,\s*/g).map(function (v) {
-                        v = v.match(/^(\d+)(m?s)$/);
+                        v = v.match(/^((?:\d*\.)?\d+)(m?s)$/);
 
                         if (v) {
                             return parseFloat(v[1]) * (v[2] === 'ms' ? 1 : 1000);
