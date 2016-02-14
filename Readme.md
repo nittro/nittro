@@ -5,6 +5,9 @@ Nittro
 
 Nittro is a javascript client-side framework and library specifically designed to be used with the [Nette framework](https://nette.org).
 
+#### Nittro renamed!
+Nittro used to be briefly known as NetteJS, but NetteJS is no more. It's only Nittro now.
+
 The documentation is [right this way](https://github.com/nittro/nittro/wiki).
 
 **Beware**, Nittro isn't yet 100% production ready. Only a part of the codebase is covered by tests
