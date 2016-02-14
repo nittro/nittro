@@ -1,10 +1,18 @@
 _context.invoke('Nette.Utils', function(Nette, Strings, Arrays, undefined) {
 
     var Tokenizer = _context.extend(function(patterns, flags) {
+        var types = false;
+
+        if (!Arrays.isArray(patterns)) {
+            types = Arrays.getKeys(patterns);
+            patterns = Arrays.getValues(patterns);
+
+        }
+
         this._ = {
             pattern: '(' + patterns.join(')|(') + ')',
             flags: flags,
-            types: Arrays.isArray(patterns) ? false : Arrays.getKeys(patterns)
+            types: types
         };
     }, {
         STATIC: {
