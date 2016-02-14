@@ -84,7 +84,7 @@ _context.invoke('Nette.Neon', function(Nette, HashMap, Tokenizer, Strings, Array
                 }
 
                 if (!Neon.tokenizer) {
-                    Neon.tokenizer = new Tokenizer(Neon.patterns, 'mi');
+                    Neon.tokenizer = new Tokenizer(Neon.patterns);
 
                 }
 

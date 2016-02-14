@@ -4404,21 +4404,35 @@ _context.invoke('Nette', function () {
 
 });
 ;
-_context.invoke('Nette.Utils', function(Nette, Strings, Arrays, undefined) {
+_context.invoke('Nette.Utils', function(Nette, Strings, Arrays, HashMap, undefined) {
 
-    var Tokenizer = _context.extend(function(patterns, flags) {
+    var Tokenizer = _context.extend(function(patterns, matchCase) {
         var types = false;
 
         if (!Arrays.isArray(patterns)) {
-            types = Arrays.getKeys(patterns);
-            patterns = Arrays.getValues(patterns);
+            if (patterns instanceof HashMap) {
+                types = patterns.getKeys();
+                patterns = patterns.getValues();
 
+            } else {
+                var tmp = patterns, type;
+                types = [];
+                patterns = [];
+
+                for (type in tmp) {
+                    if (tmp.hasOwnProperty(type)) {
+                        types.push(type);
+                        patterns.push(tmp[type]);
+
+                    }
+                }
+            }
         }
 
         this._ = {
             pattern: '(' + patterns.join(')|(') + ')',
-            flags: flags,
-            types: types
+            types: types,
+            matchCase: matchCase
         };
     }, {
         STATIC: {
@@ -4432,39 +4446,42 @@ _context.invoke('Nette.Utils', function(Nette, Strings, Arrays, undefined) {
         },
 
         tokenize: function(input) {
-            var re, tokens, len, type, t, i;
+            var re, tokens, pos, n;
 
             if (this._.types) {
-                re = new RegExp('^(?:' + this._.pattern + ')', this._.flags);
-                re.global = true;
-                tokens = input.match(re);
-                len = 0;
+                re = new RegExp(this._.pattern, 'gm' + (this._.matchCase ? '' : 'i'));
+                tokens = [];
+                pos = 0;
+                n = this._.types.length;
 
-                if (!tokens) {
-                    return [];
+                input.replace(re, function () {
+                    var ofs = arguments[n + 1],
+                        i;
 
-                }
+                    if (ofs > pos) {
+                        tokens.push([input.substr(pos, ofs - pos), pos, null]);
 
-                for (t = 0; t < tokens.length; t++) {
-                    type = null;
+                    }
 
-                    for (i = 1; i <= this._.types.length; i++) {
-                        if (tokens[t][i] === undefined) {
-                            break;
-
-                        } else if (tokens[t][i]) {
-                            type = this._.types[i - 1];
-                            break;
+                    for (i = 1; i <= n; i++) {
+                        if (arguments[i] !== undefined) {
+                            tokens.push([arguments[i], ofs, this._.types[i - 1]]);
+                            pos = ofs + arguments[0].length;
+                            return;
 
                         }
                     }
 
-                    tokens[t] = [tokens[t][0], len, type];
-                    len += tokens[t][0].length;
+                    throw new Error('Unknown token type: ' + arguments[0]);
+
+                }.bind(this));
+
+                if (pos + 1 < input.length) {
+                    tokens.push([input.substr(pos), pos, null]);
 
                 }
             } else {
-                tokens = Strings.split(input, new RegExp(this._.pattern, 'mi'), true, true, true);
+                tokens = Strings.split(input, new RegExp(this._.pattern, 'm' + (this._.matchCase ? '' : 'i')), true, true, true);
 
             }
 
@@ -4477,7 +4494,8 @@ _context.invoke('Nette.Utils', function(Nette, Strings, Arrays, undefined) {
 
 }, {
     Strings: 'Utils.Strings',
-    Arrays: 'Utils.Arrays'
+    Arrays: 'Utils.Arrays',
+    HashMap: 'Utils.HashMap'
 });
 ;
 _context.invoke('Nette.Neon', function(Nette, HashMap, Tokenizer, Strings, Arrays, DateTime, undefined) {
@@ -4566,7 +4584,7 @@ _context.invoke('Nette.Neon', function(Nette, HashMap, Tokenizer, Strings, Array
                 }
 
                 if (!Neon.tokenizer) {
-                    Neon.tokenizer = new Tokenizer(Neon.patterns, 'mi');
+                    Neon.tokenizer = new Tokenizer(Neon.patterns);
 
                 }
 
