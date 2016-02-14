@@ -1,6 +1,6 @@
 module.exports = function (grunt) {
 
-    var NetteJS = [
+    var NittroCore = [
         'src/js/context.js',
         'src/js/Utils/Strings.js',
         'src/js/Utils/Arrays.js',
@@ -11,33 +11,33 @@ module.exports = function (grunt) {
         'src/js/Utils/DOM.js',
         'src/js/Utils/ReflectionClass.js',
         'src/js/Utils/ReflectionFunction.js',
-        'src/js/Nette/EventEmitter.js',
-        'src/js/Nette/Freezable.js',
-        'src/js/Nette/Object.js',
-        'src/js/Nette/Utils/Tokenizer.js',
-        'src/js/Nette/Neon/Neon.js',
-        'src/js/Nette/Ajax/FormData.js',
-        'src/js/Nette/Ajax/Request.js',
-        'src/js/Nette/Ajax/Response.js',
-        'src/js/Nette/Ajax/Service.js',
-        'src/js/Nette/Ajax/Transport/Native.js',
-        'src/js/Nette/Page/Snippet.js',
-        'src/js/Nette/Page/Transitions.js',
-        'src/js/Nette/Page/Service.js',
-        'src/js/Nette/Forms/VendorCompiled.js',
-        'src/js/Nette/Forms/Form.js',
-        'src/js/Nette/Forms/Locator.js',
-        'src/js/Nette/DI/Container.js',
-        'src/js/Nette/DI/Context.js',
-        'src/js/Nette/Application/Storage.js',
-        'src/js/Nette/Application/Routing/URLRoute.js',
-        'src/js/Nette/Application/Routing/DOMRoute.js',
-        'src/js/Nette/Application/Routing/Router.js',
-        'src/js/Nette/Widgets/DialogBase.js',
-        'src/js/Nette/Widgets/Dialog.js',
-        'src/js/Nette/Widgets/Confirm.js',
-        'src/js/Nette/Widgets/FormDialog.js',
-        'src/js/Nette/Widgets/FlashMessages.js'
+        'src/js/Nittro/EventEmitter.js',
+        'src/js/Nittro/Freezable.js',
+        'src/js/Nittro/Object.js',
+        'src/js/Nittro/Utils/Tokenizer.js',
+        'src/js/Nittro/Neon/Neon.js',
+        'src/js/Nittro/Ajax/FormData.js',
+        'src/js/Nittro/Ajax/Request.js',
+        'src/js/Nittro/Ajax/Response.js',
+        'src/js/Nittro/Ajax/Service.js',
+        'src/js/Nittro/Ajax/Transport/Native.js',
+        'src/js/Nittro/Page/Snippet.js',
+        'src/js/Nittro/Page/Transitions.js',
+        'src/js/Nittro/Page/Service.js',
+        'src/js/Nittro/Forms/VendorCompiled.js',
+        'src/js/Nittro/Forms/Form.js',
+        'src/js/Nittro/Forms/Locator.js',
+        'src/js/Nittro/DI/Container.js',
+        'src/js/Nittro/DI/Context.js',
+        'src/js/Nittro/Application/Storage.js',
+        'src/js/Nittro/Application/Routing/URLRoute.js',
+        'src/js/Nittro/Application/Routing/DOMRoute.js',
+        'src/js/Nittro/Application/Routing/Router.js',
+        'src/js/Nittro/Widgets/DialogBase.js',
+        'src/js/Nittro/Widgets/Dialog.js',
+        'src/js/Nittro/Widgets/Confirm.js',
+        'src/js/Nittro/Widgets/FormDialog.js',
+        'src/js/Nittro/Widgets/FlashMessages.js'
     ];
 
     grunt.initConfig({
@@ -58,14 +58,14 @@ module.exports = function (grunt) {
                 mangle: false,
                 sourceMap: false
             },
-            nettejs: {
+            nittro: {
                 files: {
-                    'dist/js/nette.core.min.js': NetteJS,
-                    'dist/js/nette.full.min.js': [
+                    'dist/js/nittro.core.min.js': NittroCore,
+                    'dist/js/nittro.full.min.js': [
                         'bower_components/promiz/promiz.min.js',
                         'dist/js/netteForms.js'
                     ].concat(
-                        NetteJS,
+                        NittroCore,
                         'src/js/bootstrap.js',
                         'src/js/stack.js'
                     )
@@ -89,12 +89,12 @@ module.exports = function (grunt) {
             },
             nettejs: {
                 files: {
-                    'dist/js/nette.core.js': NetteJS,
-                    'dist/js/nette.full.js': [
+                    'dist/js/nittro.core.js': NittroCore,
+                    'dist/js/nittro.full.js': [
                         'bower_components/promiz/promiz.js',
                         'dist/js/netteForms.js'
                     ].concat(
-                        NetteJS,
+                        NittroCore,
                         'src/js/bootstrap.js',
                         'src/js/stack.js'
                     )
@@ -108,14 +108,14 @@ module.exports = function (grunt) {
                     compress: true
                 },
                 files: {
-                    'dist/css/nette.core.min.css': [
-                        'src/css/nette-dialog.less',
-                        'src/css/nette-flashes.less'
+                    'dist/css/nittro.core.min.css': [
+                        'src/css/nittro-dialog.less',
+                        'src/css/nittro-flashes.less'
                     ],
-                    'dist/css/nette.full.min.css': [
-                        'src/css/nette-dialog.less',
-                        'src/css/nette-flashes.less',
-                        'src/css/nette-transitions.less'
+                    'dist/css/nittro.full.min.css': [
+                        'src/css/nittro-dialog.less',
+                        'src/css/nittro-flashes.less',
+                        'src/css/nittro-transitions.less'
                     ]
                 }
             },
@@ -124,21 +124,21 @@ module.exports = function (grunt) {
                     compress: false
                 },
                 files: {
-                    'dist/css/nette.core.css': [
-                        'src/css/nette-dialog.less',
-                        'src/css/nette-flashes.less'
+                    'dist/css/nittro.core.css': [
+                        'src/css/nittro-dialog.less',
+                        'src/css/nittro-flashes.less'
                     ],
-                    'dist/css/nette.full.css': [
-                        'src/css/nette-dialog.less',
-                        'src/css/nette-flashes.less',
-                        'src/css/nette-transitions.less'
+                    'dist/css/nittro.full.css': [
+                        'src/css/nittro-dialog.less',
+                        'src/css/nittro-flashes.less',
+                        'src/css/nittro-transitions.less'
                     ]
                 }
             }
         },
 
         jasmine: {
-            src: NetteJS,
+            src: NittroCore,
             options: {
                 vendor: [
                     'bower_components/promiz/promiz.min.js',

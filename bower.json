@@ -1,17 +1,17 @@
 {
-    "name": "nettejs",
-    "homepage": "https://github.com/jahudka/nettejs",
+    "name": "nittro",
+    "homepage": "https://github.com/nittro/nittro",
     "authors": [
         "Dan Kadera <me@subsonic.cz>"
     ],
-    "description": "NetteJS is a client-side companion for the Nette PHP framework",
+    "description": "Nittro is a client-side companion for the Nette PHP framework",
     "repository": {
         "type": "vcs",
-        "url": "git://github.com/jahudka/nettejs.git"
+        "url": "git://github.com/nittro/nittro.git"
     },
     "keywords": [
+        "nittro",
         "nette",
-        "nettejs",
         "javascript",
         "ajax"
     ],
