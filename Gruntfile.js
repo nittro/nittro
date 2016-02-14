@@ -58,14 +58,10 @@ module.exports = function (grunt) {
                 mangle: false,
                 sourceMap: false
             },
-            min: {
+            nettejs: {
                 files: {
-                    'dist/js/nette.min.js': NetteJS
-                }
-            },
-            full: {
-                files: {
-                    'dist/js/nette.full.js': [
+                    'dist/js/nette.core.min.js': NetteJS,
+                    'dist/js/nette.full.min.js': [
                         'bower_components/promiz/promiz.min.js',
                         'dist/js/netteForms.js'
                     ].concat(
@@ -87,23 +83,51 @@ module.exports = function (grunt) {
             }
         },
 
+        concat: {
+            options: {
+                separator: ";\n"
+            },
+            nettejs: {
+                files: {
+                    'dist/js/nette.core.js': NetteJS,
+                    'dist/js/nette.full.js': [
+                        'bower_components/promiz/promiz.js',
+                        'dist/js/netteForms.js'
+                    ].concat(
+                        NetteJS,
+                        'src/js/bootstrap.js',
+                        'src/js/stack.js'
+                    )
+                }
+            }
+        },
+
         less: {
             min: {
                 options: {
                     compress: true
                 },
                 files: {
-                    'dist/css/nette.min.css': [
+                    'dist/css/nette.core.min.css': [
                         'src/css/nette-dialog.less',
                         'src/css/nette-flashes.less'
+                    ],
+                    'dist/css/nette.full.min.css': [
+                        'src/css/nette-dialog.less',
+                        'src/css/nette-flashes.less',
+                        'src/css/nette-transitions.less'
                     ]
                 }
             },
             full: {
                 options: {
-                    compress: true
+                    compress: false
                 },
                 files: {
+                    'dist/css/nette.core.css': [
+                        'src/css/nette-dialog.less',
+                        'src/css/nette-flashes.less'
+                    ],
                     'dist/css/nette.full.css': [
                         'src/css/nette-dialog.less',
                         'src/css/nette-flashes.less',
@@ -128,9 +152,10 @@ module.exports = function (grunt) {
     });
 
     grunt.loadNpmTasks('grunt-contrib-uglify');
+    grunt.loadNpmTasks('grunt-contrib-concat');
     grunt.loadNpmTasks('grunt-contrib-less');
     grunt.loadNpmTasks('grunt-contrib-jasmine');
-    grunt.registerTask('default', ['netteForms', 'uglify', 'less']);
+    grunt.registerTask('default', ['netteForms', 'uglify', 'concat', 'less']);
     grunt.registerTask('test', ['jasmine']);
 
 
