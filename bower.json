@@ -1,6 +1,6 @@
 {
     "name": "nittro",
-    "homepage": "https://github.com/nittro/nittro",
+    "homepage": "http://www.nittro.org",
     "authors": [
         "Dan Kadera <me@subsonic.cz>"
     ],
@@ -17,6 +17,9 @@
     ],
     "license": "MIT",
     "dependencies": {
+        "nittro-core": "^1.9.1",
+        "nittro-page": "^1.9.1",
+        "nittro-application": "^1.9.1",
         "nette-forms": "^2.3.7",
         "promiz": "^1.0.6"
     },

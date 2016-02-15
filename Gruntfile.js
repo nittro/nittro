@@ -1,43 +1,12 @@
 module.exports = function (grunt) {
 
-    var NittroCore = [
-        'src/js/context.js',
-        'src/js/Utils/Strings.js',
-        'src/js/Utils/Arrays.js',
-        'src/js/Utils/HashMap.js',
-        'src/js/Utils/DateInterval.js',
-        'src/js/Utils/DateTime.js',
-        'src/js/Utils/Url.js',
-        'src/js/Utils/DOM.js',
-        'src/js/Utils/ReflectionClass.js',
-        'src/js/Utils/ReflectionFunction.js',
-        'src/js/Nittro/EventEmitter.js',
-        'src/js/Nittro/Freezable.js',
-        'src/js/Nittro/Object.js',
-        'src/js/Nittro/Utils/Tokenizer.js',
-        'src/js/Nittro/Neon/Neon.js',
-        'src/js/Nittro/Ajax/FormData.js',
-        'src/js/Nittro/Ajax/Request.js',
-        'src/js/Nittro/Ajax/Response.js',
-        'src/js/Nittro/Ajax/Service.js',
-        'src/js/Nittro/Ajax/Transport/Native.js',
-        'src/js/Nittro/Page/Snippet.js',
-        'src/js/Nittro/Page/Transitions.js',
-        'src/js/Nittro/Page/Service.js',
-        'src/js/Nittro/Forms/VendorCompiled.js',
-        'src/js/Nittro/Forms/Form.js',
-        'src/js/Nittro/Forms/Locator.js',
-        'src/js/Nittro/DI/Container.js',
-        'src/js/Nittro/DI/Context.js',
-        'src/js/Nittro/Application/Storage.js',
-        'src/js/Nittro/Application/Routing/URLRoute.js',
-        'src/js/Nittro/Application/Routing/DOMRoute.js',
-        'src/js/Nittro/Application/Routing/Router.js',
-        'src/js/Nittro/Widgets/DialogBase.js',
+    var Nittro = [
+        'bower_components/nittro-core/dist/js/nittro-core.js',
+        'bower_components/nittro-page/dist/js/nittro-page.js',
+        'bower_components/nittro-application/dist/js/nittro-application.js',
         'src/js/Nittro/Widgets/Dialog.js',
         'src/js/Nittro/Widgets/Confirm.js',
-        'src/js/Nittro/Widgets/FormDialog.js',
-        'src/js/Nittro/Widgets/FlashMessages.js'
+        'src/js/Nittro/Widgets/FormDialog.js'
     ];
 
     grunt.initConfig({
@@ -60,24 +29,21 @@ module.exports = function (grunt) {
             },
             nittro: {
                 files: {
-                    'dist/js/nittro.core.min.js': NittroCore,
+                    'dist/js/nittro.core.min.js': Nittro,
                     'dist/js/nittro.full.min.js': [
                         'bower_components/promiz/promiz.min.js',
                         'dist/js/netteForms.js'
                     ].concat(
-                        NittroCore,
+                        Nittro,
                         'src/js/bootstrap.js',
-                        'src/js/stack.js'
+                        'bower_components/nittro-core/src/js/stack.js'
                     )
                 }
             },
             stack: {
                 files: {
                     'dist/js/stack.min.js': [
-                        'src/js/stack.js'
-                    ],
-                    'dist/js/stack-async.min.js': [
-                        'src/js/stack-async.js'
+                        'bower_components/nittro-core/src/js/stack.js'
                     ]
                 }
             }
@@ -89,14 +55,14 @@ module.exports = function (grunt) {
             },
             nettejs: {
                 files: {
-                    'dist/js/nittro.core.js': NittroCore,
+                    'dist/js/nittro.core.js': Nittro,
                     'dist/js/nittro.full.js': [
-                        'bower_components/promiz/promiz.js',
+                        'bower_components/promiz/promiz.min.js',
                         'dist/js/netteForms.js'
                     ].concat(
-                        NittroCore,
+                        Nittro,
                         'src/js/bootstrap.js',
-                        'src/js/stack.js'
+                        'bower_components/nittro-core/src/js/stack.js'
                     )
                 }
             }
@@ -109,13 +75,13 @@ module.exports = function (grunt) {
                 },
                 files: {
                     'dist/css/nittro.core.min.css': [
-                        'src/css/nittro-dialog.less',
-                        'src/css/nittro-flashes.less'
+                        'src/css/dialogs.less',
+                        'bower_components/nittro-page/src/css/flashes.less'
                     ],
                     'dist/css/nittro.full.min.css': [
                         'src/css/nittro-dialog.less',
-                        'src/css/nittro-flashes.less',
-                        'src/css/nittro-transitions.less'
+                        'bower_components/nittro-page/src/css/flashes.less',
+                        'bower_components/nittro-page/src/css/transitions.less'
                     ]
                 }
             },
@@ -125,28 +91,15 @@ module.exports = function (grunt) {
                 },
                 files: {
                     'dist/css/nittro.core.css': [
-                        'src/css/nittro-dialog.less',
-                        'src/css/nittro-flashes.less'
+                        'src/css/dialogs.less',
+                        'bower_components/nittro-page/src/css/flashes.less'
                     ],
                     'dist/css/nittro.full.css': [
                         'src/css/nittro-dialog.less',
-                        'src/css/nittro-flashes.less',
-                        'src/css/nittro-transitions.less'
+                        'bower_components/nittro-page/src/css/flashes.less',
+                        'bower_components/nittro-page/src/css/transitions.less'
                     ]
                 }
-            }
-        },
-
-        jasmine: {
-            src: NittroCore,
-            options: {
-                vendor: [
-                    'bower_components/promiz/promiz.min.js',
-                    'bower_components/nette-forms/src/assets/netteForms.js'
-                ],
-                specs: 'tests/specs/**.spec.js',
-                display: 'short',
-                summary: true
             }
         }
     });
@@ -154,9 +107,7 @@ module.exports = function (grunt) {
     grunt.loadNpmTasks('grunt-contrib-uglify');
     grunt.loadNpmTasks('grunt-contrib-concat');
     grunt.loadNpmTasks('grunt-contrib-less');
-    grunt.loadNpmTasks('grunt-contrib-jasmine');
     grunt.registerTask('default', ['netteForms', 'uglify', 'concat', 'less']);
-    grunt.registerTask('test', ['jasmine']);
 
 
     grunt.registerMultiTask('netteForms', 'Fix netteForms.js', function () {

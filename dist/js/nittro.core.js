@@ -1423,630 +1423,6 @@ _context.invoke('Utils', function (Arrays, undefined) {
 
 });
 ;
-_context.invoke('Utils', function (undefined) {
-
-    var DateInterval = function (interval) {
-        this._ = {
-            initialized: false,
-            interval: interval
-        };
-    };
-
-    DateInterval.from = function (interval) {
-        return new DateInterval(interval);
-
-    };
-
-    var intervalNames = [
-        'year',
-        'month',
-        'week',
-        'day',
-        'hour',
-        'minute',
-        'second',
-        'millisecond'
-    ];
-
-    var intervalLengths = [
-        31536000000,
-        604800000,
-        2678400000,
-        86400000,
-        3600000,
-        60000,
-        1000,
-        1
-    ];
-
-    var intervalHelpers = [
-        { pattern: /^y(?:ears?)?$/, toString: function(n) { return n === 1 ? 'year' : 'years' } },
-        { pattern: /^mon(?:ths?)?$/, toString: function(n) { return n === 1 ? 'month' : 'months' } },
-        { pattern: /^w(?:eeks?)?$/, toString: function(n) { return n === 1 ? 'week' : 'weeks' } },
-        { pattern: /^d(?:ays?)?$/, toString: function(n) { return n === 1 ? 'day' : 'days' } },
-        { pattern: /^h(?:ours?)?$/, toString: function(n) { return n === 1 ? 'hour' : 'hours' } },
-        { pattern: /^min(?:utes?)?$/, toString: function(n) { return n === 1 ? 'minute' : 'minutes' } },
-        { pattern: /^s(?:ec(?:onds?)?)?$/, toString: function(n) { return n === 1 ? 'second' : 'seconds' } },
-        { pattern: /^millis(?:econds?)?$|^ms$/, toString: function(n) { return n === 1 ? 'millisecond' : 'milliseconds' } }
-    ];
-
-
-    var separators = [', ', ' and '];
-
-
-    DateInterval.setHelpers = function (helpers) {
-        // @todo check helpers are valid
-        intervalHelpers = helpers;
-
-    };
-
-    DateInterval.setSeparators = function (separator, last) {
-        separators = [separator, last];
-
-    };
-
-    function getValue(interval) {
-        if (typeof interval === 'number') {
-            return interval;
-        } else if (interval instanceof DateInterval) {
-            return interval.getLength();
-        } else {
-            return DateInterval.from(interval).getLength();
-        }
-    }
-
-    DateInterval.prototype.add = function (interval) {
-        this._initialize();
-        this._.interval += getValue(interval);
-        return this;
-
-    };
-
-    DateInterval.prototype.subtract = function (interval) {
-        this._initialize();
-        this._.interval -= getValue(interval);
-        return this;
-
-    };
-
-    DateInterval.prototype.isNegative = function () {
-        this._initialize();
-        return this._.interval < 0;
-
-    };
-
-    DateInterval.prototype.getLength = function () {
-        this._initialize();
-        return this._.interval;
-
-    };
-
-    DateInterval.prototype.valueOf = function () {
-        return this.getLength();
-
-    };
-
-
-    function formatAuto(interval, precision) {
-        if (precision === true) {
-            precision = intervalNames.length;
-
-        } else if (!precision) {
-            precision = 2;
-
-        }
-
-        var i, v, str = [], last, sign = '';
-
-        if (interval < 0) {
-            sign = '-';
-            interval = -interval;
-
-        }
-
-        for (i = 0; i < intervalNames.length; i++) {
-            if (interval >= intervalLengths[i]) {
-                precision--;
-                v = interval / intervalLengths[i];
-                v = precision === 0 ? Math.round(v) : Math.floor(v);
-                str.push(v + ' ' + intervalHelpers[i].toString(v));
-                interval -= v * intervalLengths[i];
-
-                if (precision === 0) {
-                    break;
-
-                }
-            }
-        }
-
-        if (str.length > 2) {
-            last = str.pop();
-            return sign + str.join(separators[0]) + (separators[1] || separators[0]) + last;
-
-        } else {
-            return sign + str.join(separators[1] || separators[0]);
-
-        }
-    }
-
-    function format(interval, pattern) {
-        var sign = interval < 0 ? '-' : '+';
-        interval = Math.abs(interval);
-
-        return (pattern + '').replace(/%(.)/g, function (m, f) {
-            var v, pad = false;
-
-            switch (f) {
-                case '%':
-                    return '%';
-
-                case 'y':
-                    m = intervalLengths[0];
-                    break;
-
-                case 'w':
-                    m = intervalLengths[1];
-                    break;
-
-                case 'm':
-                    pad = true;
-                case 'n':
-                    m = intervalLengths[2];
-                    break;
-
-                case 'd':
-                    pad = true;
-                case 'j':
-                    m = intervalLengths[3];
-                    break;
-
-                case 'H':
-                    pad = true;
-                case 'G':
-                    m = intervalLengths[4];
-                    break;
-
-                case 'i':
-                    pad = true;
-                case 'I':
-                    m = intervalLengths[5];
-                    break;
-
-                case 's':
-                    pad = true;
-                case 'S':
-                    m = intervalLengths[6];
-                    break;
-
-                case '-':
-                    return sign === '-' ? sign : '';
-
-                case '+':
-                    return sign;
-
-                default:
-                    throw new Error('Unknown format modifier: %' + f);
-
-            }
-
-            v = Math.floor(interval / m);
-            interval -= m * v;
-            return pad && v < 10 ? '0' + v : v;
-
-        });
-    }
-
-    DateInterval.prototype.format = function (pattern) {
-        this._initialize();
-
-        if (typeof pattern === 'boolean' || typeof pattern === 'number' || !pattern) {
-            return formatAuto(this._.interval, pattern);
-
-        } else {
-            return format(this._.interval, pattern);
-
-        }
-    };
-
-    DateInterval.prototype._initialize = function () {
-        if (this._.initialized) {
-            return;
-        }
-
-        this._.initialized = true;
-
-        if (typeof this._.interval === 'number') {
-            return;
-
-        }
-
-        var interval = this._.interval;
-
-        if (interval instanceof DateInterval) {
-            this._.interval = interval.getLength();
-
-        } else if (typeof interval === 'string') {
-            if (interval.match(/^\s*(?:\+|-)?\s*\d+\s*$/)) {
-                this._.interval = parseInt(interval.trim());
-
-            } else {
-                var res = 0,
-                    sign = 1,
-                    rest;
-
-                rest = interval.replace(/\s*(\+|-)?\s*(\d+)\s+(\S+)\s*/g, function (m, s, n, k) {
-                    if (s !== undefined) {
-                        sign = s === '+' ? 1 : -1;
-
-                    }
-
-                    k = k.toLowerCase();
-                    n = parseInt(n) * sign;
-                    m = null;
-
-                    for (var i = 0; i < intervalHelpers.length; i++) {
-                        if (intervalHelpers[i].pattern.test(k)) {
-                            m = intervalLengths[i];
-                            break;
-                        }
-                    }
-
-                    if (m === null) {
-                        throw new Error('Unknown keyword: "' + k + '"');
-
-                    }
-
-                    res += n * m;
-
-                    return '';
-
-                });
-
-                if (rest.length) {
-                    throw new Error('Invalid interval specification "' + interval + '", didn\'t understand "' + rest + '"');
-
-                }
-
-                this._.interval = res;
-
-            }
-        } else {
-            throw new Error('Invalid interval specification, expected string, number or a DateInterval instance');
-
-        }
-    };
-
-    _context.register(DateInterval, 'DateInterval');
-
-});
-;
-_context.invoke('Utils', function(Strings, Arrays, DateInterval, undefined) {
-
-	var DateTime = function(d) {
-		this._ = {
-			initialized: false,
-			date: d || new Date()
-		};
-	};
-
-    DateTime.keywords = {
-        weekdays: {
-            abbrev: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
-            full: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
-        },
-        months: {
-            abbrev: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-            full: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
-        },
-        relative: {
-            now: 'now',
-            today: 'today',
-            tomorrow: 'tomorrow',
-            yesterday: 'yesterday',
-            noon: 'noon',
-            midnight: 'midnight',
-            at: 'at'
-        }
-    };
-
-	DateTime.from = function(s) {
-		return new DateTime(s);
-
-	};
-
-	DateTime.now = function () {
-		return new DateTime();
-	};
-
-	DateTime.isDateObject = function(o) {
-		return typeof o === 'object' && o && o.date !== undefined && o.timezone !== undefined && o.timezone_type !== undefined;
-
-	};
-
-	DateTime.isLeapYear = function(y) {
-		return y % 4 === 0 && y % 100 !== 0 || y % 400 === 0;
-
-	};
-
-    DateTime.isModifyString = function (str) {
-        var kw = DateTime.keywords.relative,
-            re = new RegExp('(?:^(?:' + [kw.now, kw.yesterday, kw.tomorrow, kw.today].map(Strings.escapeRegex).join('|') + '))|' + Strings.escapeRegex(kw.noon) + '|' + Strings.escapeRegex(kw.midnight) + '|\\d?\\d(?::\\d\\d|\\s*(?:am|pm))(?:\\d\\d)?(?:\\s*(?:am|pm))?|(?:[-+]\\s*)?\\d+\\s+[^\\d\\s]', 'i');
-        return re.test(str);
-    };
-
-	DateTime.getDaysInMonth = function(m, y) {
-		return m === 2 ? (DateTime.isLeapYear(y) ? 29 : 28) : (m in {4:1,6:1,9:1,11:1} ? 30 : 31);
-
-	};
-
-	var ni = function() { throw new Error('Not implemented!'); },
-		pad = function(n) {
-			return (n < 10) ? '0' + n : n;
-		};
-
-	var formatTz = function (offset) {
-		if ((typeof offset === 'string' || offset instanceof String) && offset.match(/(\+|-)\d\d:\d\d/)) {
-			return offset;
-
-		}
-
-		if (typeof offset !== 'number') {
-			offset = parseInt(offset);
-
-		}
-
-		return (offset < 0 ? '+' : '-') + pad(parseInt(Math.abs(offset) / 60)) + ':' + pad(Math.abs(offset) % 60)
-
-	};
-
-	DateTime.getLocalTzOffset = function () {
-		return formatTz(new Date().getTimezoneOffset());
-
-	};
-
-	DateTime.formatModifiers = {
-		d: function(d, u) { return pad(u ? d.getUTCDate() : d.getDate()); },
-		D: function(d, u) { return DateTime.keywords.weekdays.abbrev[u ? d.getUTCDay() : d.getDay()]; },
-		j: function(d, u) { return u ? d.getUTCDate() : d.getDate(); },
-		l: function(d, u) { return DateTime.keywords.weekdays.full[u ? d.getUTCDay() : d.getDay()]; },
-		N: function(d, u, n) { n = u ? d.getUTCDay() : d.getDay(); return n === 0 ? 7 : n; },
-		S: function(d, u, n) { n = u ? d.getUTCDate() : d.getDate(); n %= 10; return n === 0 || n > 3 ? 'th' : ['st', 'nd', 'rd'][n - 1]; },
-		w: function(d, u) { return u ? d.getUTCDay() : d.getDay(); },
-		z: function(d, u, n, m, y, M) { n = u ? d.getUTCDate() : d.getDate(); n--; y = u ? d.getUTCFullYear() : d.getFullYear(); m = 0; M = u ? d.getUTCMonth() : d.getMonth(); while (m < M) n += DateTime.getDaysInMonth(m++, y); return n; },
-		W: ni,
-		F: function(d, u) { return DateTime.keywords.months.full[u ? d.getUTCMonth() : d.getMonth()]; },
-		m: function(d, u) { return pad((u ? d.getUTCMonth() : d.getMonth()) + 1); },
-		M: function(d, u) { return DateTime.keywords.months.abbrev[u ? d.getUTCMonth() : d.getMonth()]; },
-		n: function(d, u) { return (u ? d.getUTCMonth() : d.getMonth()) + 1; },
-		t: function(d, u) { return DateTime.getDaysInMonth(u ? d.getUTCMonth() : d.getMonth(), u ? d.getUTCFullYear() : d.getFullYear()); },
-		L: function(d, u) { return DateTime.isLeapYear(u ? d.getUTCFullYear() : d.getFullYear()) ? 1 : 0; },
-		o: ni,
-		Y: function(d, u) { return u ? d.getUTCFullYear() : d.getFullYear(); },
-		y: function(d, u) { return (u ? d.getUTCFullYear() : d.getFullYear()).toString().substr(-2); },
-		a: function(d, u, h) { h = u ? d.getUTCHours() : d.getHours(); return h >= 0 && h < 12 ? 'am' : 'pm'; },
-		A: function(d, u) { return DateTime.formatModifiers.a(d, u).toUpperCase(); },
-		g: function(d, u, h) { h = u ? d.getUTCHours() : d.getHours(); return h === 0 ? 12 : (h > 12 ? h - 12 : h); },
-		G: function(d, u) { return u ? d.getUTCHours() : d.getHours(); },
-		h: function(d, u) { return pad(DateTime.formatModifiers.g(d, u)); },
-		H: function(d, u) { return pad(u ? d.getUTCHours() : d.getHours()); },
-		i: function(d, u) { return pad(u ? d.getUTCMinutes() : d.getMinutes()); },
-		s: function(d, u) { return pad(u ? d.getUTCSeconds() : d.getSeconds()); },
-		u: function(d, u) { return (u ? d.getUTCMilliseconds() : d.getMilliseconds()) * 1000; },
-		e: ni,
-		I: ni,
-		O: function (d, u) { return DateTime.formatModifiers.P(d, u).replace(':', ''); },
-		P: function (d, u) { return u ? '+00:00' : formatTz(d.getTimezoneOffset()); },
-		T: ni,
-		Z: function (d, u) { return u ? 0 : d.getTimezoneOffset() * -60; },
-		c: function (d, u) { return DateTime.from(d).format('Y-m-d\\TH:i:sP', u); },
-		r: function (d, u) { return DateTime.from(d).format('D, n M Y G:i:s O', u); },
-		U: function(d) { return Math.round(d.getTime() / 1000); }
-	};
-
-	DateTime.prototype.format = function(f, utc) {
-		this._initialize();
-
-		var d = this._.date,
-			pattern = Strings.escapeRegex(Arrays.getKeys(DateTime.formatModifiers).join(',')).replace(/,/g, '|'),
-			re = new RegExp('(\\\\*)(' + pattern + ')', 'g');
-
-		return f.replace(re, function(s, c, m) {
-			if (c.length % 2) {
-				return c.substr(1) + m;
-
-			}
-
-			return c + '' + (DateTime.formatModifiers[m](d, utc));
-
-		});
-
-	};
-
-	[
-        'getTime',
-        'getDate', 'getDay', 'getMonth', 'getFullYear',
-        'getHours', 'getMinutes', 'getSeconds', 'getMilliseconds', 'getTimezoneOffset',
-        'getUTCDate', 'getUTCDay', 'getUTCMonth', 'getUTCFullYear',
-        'getUTCHours', 'getUTCMinutes', 'getUTCSeconds', 'getUTCMilliseconds',
-        'toDateString', 'toISOString', 'toJSON',
-        'toLocaleDateString', 'toLocaleFormat', 'toLocaleTimeString',
-        'toString', 'toTimeString', 'toUTCString'
-    ].forEach(function (method) {
-        DateTime.prototype[method] = function () {
-            this._initialize();
-            return this._.date[method].apply(this._.date, arguments);
-
-        };
-    });
-
-    [
-        'setTime',
-        'setDate', 'setMonth', 'setFullYear',
-        'setHours', 'setMinutes', 'setSeconds', 'setMilliseconds',
-        'setUTCDate', 'setUTCMonth', 'setUTCFullYear',
-        'setUTCHours', 'setUTCMinutes', 'setUTCSeconds', 'setUTCMilliseconds'
-    ].forEach(function (method) {
-        DateTime.prototype[method] = function () {
-            this._initialize();
-            this._.date[method].apply(this._.date, arguments);
-            return this;
-
-        };
-    });
-
-	DateTime.prototype.getTimestamp = function() {
-		this._initialize();
-		return Math.round(this._.date.getTime() / 1000);
-
-	};
-
-	DateTime.prototype.getDateObject = function () {
-		this._initialize();
-		return this._.date;
-
-	};
-
-	DateTime.prototype.valueOf = function () {
-		return this.getTimestamp();
-
-	};
-
-	DateTime.prototype.modify = function(s) {
-		this._initialize();
-		var t = this._.date.getTime(), r,
-            re, kw = DateTime.keywords.relative;
-
-        if (s instanceof DateInterval) {
-            this._.date = new Date(t + s.getLength());
-            return this;
-
-        }
-
-		s = s.toLowerCase();
-
-        re = new RegExp('^(' + [kw.yesterday, kw.tomorrow, kw.now, kw.today].map(Strings.escapeRegex).join('|') + ')\\s*(?:' + Strings.escapeRegex(kw.at) + '\\s*)?');
-
-		if (r = s.match(re)) {
-			s = s.substr(r[0].length);
-
-			switch (r[1]) {
-				case kw.now:
-				case kw.today:
-					t = Date.now();
-					break;
-
-				case kw.yesterday:
-					t -= 86400000;
-					break;
-
-				case kw.tomorrow:
-					t += 86400000;
-					break;
-
-			}
-		}
-
-        re = new RegExp('^(' + Strings.escapeRegex(kw.noon) + '|' + Strings.escapeRegex(kw.midnight) + '|\\d\\d?(?::\\d\\d|\\s*(?:am|pm))(?::\\d\\d)?(?:\\s*(?:am|pm))?)\\s*');
-
-        if (r = s.match(re)) {
-			s = s.substr(r[0].length);
-
-			t = new Date(t);
-
-			if (r[1] === kw.noon) {
-				t.setHours(12, 0, 0, 0);
-
-			} else if (r[1] === kw.midnight) {
-				t.setHours(0, 0, 0, 0);
-
-			} else {
-				r = r[1].match(/^(\d\d?)(?::(\d\d))?(?::(\d\d))?(?:\s*(am|pm))?$/);
-				r[1] = parseInt(r[1]);
-				r[2] = r[2] ? parseInt(r[2]) : 0;
-				r[3] = r[3] ? parseInt(r[3]) : 0;
-
-				if (r[4]) {
-					if (r[4] === 'am' && r[1] === 12) {
-						r[1] = 0;
-
-					} else if (r[4] === 'pm' && r[1] < 12) {
-						r[1] += 12;
-
-					}
-				}
-
-				t.setHours(r[1], r[2], r[3], 0);
-
-			}
-
-			t = t.getTime();
-
-		}
-
-        if (s.length && !s.match(/^\s+$/)) {
-            t += DateInterval.from(s).getLength();
-
-        }
-
-		this._.date = new Date(t);
-		return this;
-
-	};
-
-	DateTime.prototype.modifyClone = function(s) {
-		return DateTime.from(this).modify(s);
-
-	};
-
-	DateTime.prototype._initialize = function() {
-		if (this._.initialized) {
-			return;
-
-		}
-
-		this._.initialized = true;
-
-		if (typeof this._.date === 'string') {
-			var m;
-
-			if (m = this._.date.match(/^@(\d+)$/)) {
-				this._.date = new Date(m[1] * 1000);
-
-			} else if (m = this._.date.match(/^(\d\d\d\d-\d\d-\d\d)[ T](\d\d:\d\d(?::\d\d(?:\.\d+)?)?)([-+]\d\d:?\d\d)?$/)) {
-				this._.date = new Date(m[1] + 'T' + m[2] + (m[3] || ''));
-
-			} else if (DateTime.isModifyString(this._.date)) {
-				var s = this._.date;
-				this._.date = new Date();
-				this.modify(s);
-
-			} else {
-				this._.date = new Date(this._.date);
-
-			}
-		} else if (typeof this._.date === 'number') {
-			this._.date = new Date(this._.date);
-
-		} else if (DateTime.isDateObject(this._.date)) {
-			var s = this._.date.date;
-
-			if (this._.date.timezone_type !== 3 || this._.date.timezone === 'UTC') {
-				s += ' ' + this._.date.timezone;
-
-			}
-
-			this._.date = new Date(s);
-
-		} else if (this._.date instanceof DateTime) {
-			this._.date = new Date(this._.date.getTime());
-
-		}
-	};
-
-    _context.register(DateTime, 'DateTime');
-
-});
-;
 _context.invoke('Utils', function(Strings, undefined) {
 
     var Url = function(s) {
@@ -3479,482 +2855,6 @@ _context.invoke('Nittro', function () {
 
 });
 ;
-_context.invoke('Nittro.Utils', function(Nittro, Strings, Arrays, HashMap, undefined) {
-
-    var Tokenizer = _context.extend(function(patterns, matchCase) {
-        var types = false;
-
-        if (!Arrays.isArray(patterns)) {
-            if (patterns instanceof HashMap) {
-                types = patterns.getKeys();
-                patterns = patterns.getValues();
-
-            } else {
-                var tmp = patterns, type;
-                types = [];
-                patterns = [];
-
-                for (type in tmp) {
-                    if (tmp.hasOwnProperty(type)) {
-                        types.push(type);
-                        patterns.push(tmp[type]);
-
-                    }
-                }
-            }
-        }
-
-        this._ = {
-            pattern: '(' + patterns.join(')|(') + ')',
-            types: types,
-            matchCase: matchCase
-        };
-    }, {
-        STATIC: {
-            getCoordinates: function(text, offset) {
-                text = text.substr(0, offset);
-                var m = text.match(/\n/g);
-
-                return [(m ? m.length : 0) + 1, offset - ("\n" + text).lastIndexOf("\n") + 1];
-
-            }
-        },
-
-        tokenize: function(input) {
-            var re, tokens, pos, n;
-
-            if (this._.types) {
-                re = new RegExp(this._.pattern, 'gm' + (this._.matchCase ? '' : 'i'));
-                tokens = [];
-                pos = 0;
-                n = this._.types.length;
-
-                input.replace(re, function () {
-                    var ofs = arguments[n + 1],
-                        i;
-
-                    if (ofs > pos) {
-                        tokens.push([input.substr(pos, ofs - pos), pos, null]);
-
-                    }
-
-                    for (i = 1; i <= n; i++) {
-                        if (arguments[i] !== undefined) {
-                            tokens.push([arguments[i], ofs, this._.types[i - 1]]);
-                            pos = ofs + arguments[0].length;
-                            return;
-
-                        }
-                    }
-
-                    throw new Error('Unknown token type: ' + arguments[0]);
-
-                }.bind(this));
-
-                if (pos + 1 < input.length) {
-                    tokens.push([input.substr(pos), pos, null]);
-
-                }
-            } else {
-                tokens = Strings.split(input, new RegExp(this._.pattern, 'm' + (this._.matchCase ? '' : 'i')), true, true, true);
-
-            }
-
-            return tokens;
-
-        }
-    });
-
-    _context.register(Tokenizer, 'Tokenizer');
-
-}, {
-    Strings: 'Utils.Strings',
-    Arrays: 'Utils.Arrays',
-    HashMap: 'Utils.HashMap'
-});
-;
-_context.invoke('Nittro.Neon', function(Nittro, HashMap, Tokenizer, Strings, Arrays, DateTime, undefined) {
-
-    var Neon = _context.extend(function() {
-        this._cbStr = this._cbStr.bind(this);
-
-    }, {
-        STATIC: {
-            patterns: [
-                '\'[^\'\\n]*\'|"(?:\\\\.|[^"\\\\\\n])*"', //string
-                '(?:[^#"\',:=[\\]{}()\x00-\x20!`-]|[:-][^"\',\\]})\\s])(?:[^,:=\\]})(\x00-\x20]|:(?![\\s,\\]})]|$)|[ \\t]+[^#,:=\\]})(\x00-\x20])*', // literal / boolean / integer / float
-                '[,:=[\\]{}()-]', // symbol
-                '?:#.*', // comment
-                '\\n[\\t ]*', // new line + indent
-                '?:[\\t ]+' // whitespace
-            ],
-
-            brackets: {
-                '{' : '}',
-                '[' : ']',
-                '(' : ')'
-            },
-
-            consts: {
-                'true': true, 'True': true, 'TRUE': true, 'yes': true, 'Yes': true, 'YES': true, 'on': true, 'On': true, 'ON': true,
-                'false': false, 'False': false, 'FALSE': false, 'no': false, 'No': false, 'NO': false, 'off': false, 'Off': false, 'OFF': false,
-                'null': null, 'Null': null, 'NULL': null
-            },
-
-            indent: '    ',
-
-            BLOCK: 1,
-
-            encode: function(data, options) {
-                var tmp, s, isList;
-
-                if (data instanceof DateTime) {
-                    return data.format('Y-m-d H:i:s O');
-
-                } else if (data instanceof NeonEntity) {
-                    tmp = Neon.encode(data.attributes);
-                    return Neon.encode(data.value) + '(' + tmp.substr(1, tmp.length - 2) + ')';
-
-                }
-
-                if (data && typeof data === 'object') { // array or object literal
-                    s = [];
-                    isList = Arrays.isArray(data);
-
-                    if (options & Neon.BLOCK) {
-                        Arrays.walk(data, function(k, v) {
-                            v = Neon.encode(v, Neon.BLOCK);
-                            s.push(isList ? '-' : (Neon.encode(k) + ':'), Strings.contains(v, "\n") ? "\n" + Neon.indent + v.replace(/\n/g, "\n" + Neon.indent) : (' ' + v), "\n");
-
-                        });
-
-                        return s.length ? s.join('') : '[]';
-
-                    } else {
-                        Arrays.walk(data, function(k, v) {
-                            s.push(isList ? '' : (Neon.encode(k) + ': '), Neon.encode(v), ', ');
-
-                        });
-
-                        s.pop(); // remove last ', '
-                        return (isList ? '[' : "{") + s.join('') + (isList ? ']' : '}');
-
-                    }
-                } else if (typeof data === 'string' && !Strings.isNumeric(data)
-                    && !data.match(/[\x00-\x1F]|^\d{4}|^(true|false|yes|no|on|off|null)$/i)
-                    && data.match(new RegExp('^' + Neon.patterns[1] + '$'))) {
-
-                    return data;
-
-                } else {
-                    return JSON.stringify(data);
-
-                }
-            },
-
-            decode: function(input) {
-                if (typeof input !== 'string') {
-                    throw new Error('Invalid argument, must be a string');
-
-                }
-
-                if (!Neon.tokenizer) {
-                    Neon.tokenizer = new Tokenizer(Neon.patterns);
-
-                }
-
-                input = input.replace(/\r/g, '');
-
-                var parser = new Neon(),
-                    res;
-
-                parser.input = input;
-                parser.tokens = Neon.tokenizer.tokenize(input);
-
-                res = parser.parse(0, new HashMap());
-
-                while (parser.tokens[parser.n] !== undefined) {
-                    if (parser.tokens[parser.n][0].charAt(0) === "\n") {
-                        parser.n++;
-
-                    } else {
-                        parser.error();
-
-                    }
-                }
-
-                return res;
-
-            }
-        },
-
-        input: null,
-        tokens: null,
-        n: 0,
-        indentTabs: null,
-
-        parse: function(indent, result) {
-            indent === undefined && (indent = null);
-            result === undefined && (result = new HashMap());
-
-            var inlineParser = (indent === null),
-                value = null, key = null, entity = null,
-                hasValue = false, hasKey = false,
-                t;
-
-            for (; this.n < this.tokens.length; this.n++) {
-                t = this.tokens[this.n][0];
-
-                if (t === ',') {
-                    if ((!hasKey && !hasValue) || !inlineParser) {
-                        this.error();
-
-                    }
-
-                    this.addValue(result, hasKey, key, hasValue ? value : null);
-                    hasKey = hasValue = false;
-
-                } else if (t === ':' || t === '=') {
-                    if (hasKey || !hasValue) {
-                        this.error();
-
-                    }
-
-                    if (typeof value !== 'string' && typeof value !== 'number') {
-                        this.error('Unacceptable key');
-
-                    }
-
-                    key = Strings.toString(value);
-                    hasKey = true;
-                    hasValue = false;
-
-                } else if (t === '-') {
-                    if (hasKey || hasValue || inlineParser) {
-                        this.error();
-
-                    }
-
-                    key = null;
-                    hasKey = true;
-
-                } else if (Neon.brackets[t] !== undefined) {
-                    if (hasValue) {
-                        if (t !== '(') {
-                            this.error();
-
-                        }
-
-                        this.n++;
-
-                        entity = new NeonEntity();
-                        entity.value = value;
-                        entity.attributes = this.parse(null, new HashMap());
-                        value = entity;
-
-                    } else {
-                        this.n++;
-                        value = this.parse(null, new HashMap());
-
-                    }
-
-                    hasValue = true;
-
-                    if (this.tokens[this.n] === undefined || this.tokens[this.n][0] !== Neon.brackets[t]) {
-                        this.error();
-
-                    }
-
-                } else if (t === '}' || t === ']' || t === ')') {
-                    if (!inlineParser) {
-                        this.error();
-
-                    }
-
-                    break;
-
-                } else if (t.charAt(0) === "\n") {
-                    if (inlineParser) {
-                        if (hasKey || hasValue) {
-                            this.addValue(result, hasKey, key, hasValue ? value : null);
-                            hasKey = hasValue = false;
-
-                        }
-                    } else {
-                        while (this.tokens[this.n + 1] !== undefined && this.tokens[this.n + 1][0].charAt(0) === "\n") {
-                            this.n++;
-
-                        }
-
-                        if (this.tokens[this.n + 1] === undefined) {
-                            break;
-
-                        }
-
-                        var newIndent = this.tokens[this.n][0].length - 1;
-                        if (indent === null) {
-                            indent = newIndent;
-
-                        }
-
-                        if (newIndent) {
-                            if (this.indentTabs === null) {
-                                this.indentTabs = this.tokens[this.n][0].charAt(1) === "\t";
-
-                            }
-
-                            if (Strings.contains(this.tokens[this.n][0], this.indentTabs ? ' ' : "\t")) {
-                                this.n++;
-                                this.error('Either tabs or spaces may be used for indentation, not both');
-
-                            }
-                        }
-
-                        if (newIndent > indent) {
-                            if (hasValue || !hasKey) {
-                                this.n++;
-                                this.error('Unexpected indentation');
-
-                            } else {
-                                this.addValue(result, key !== null, key, this.parse(newIndent, new HashMap()));
-
-                            }
-
-                            newIndent = this.tokens[this.n] !== undefined ? this.tokens[this.n][0].length - 1 : 0;
-                            hasKey = false;
-
-                        } else {
-                            if (hasValue && !hasKey) {
-                                break;
-
-                            } else if (hasKey) {
-                                this.addValue(result, key !== null, key, hasValue ? value : null);
-                                hasKey = hasValue = false;
-
-                            }
-                        }
-
-                        if (newIndent < indent) {
-                            return result;
-
-                        }
-                    }
-                } else {
-                    if (hasValue) {
-                        this.error();
-
-                    }
-
-                    if (t.charAt(0) === '"') {
-                        value = t.substr(1, t.length - 2).replace(/\\(?:u[0-9a-f]{4}|x[0-9a-f]{2}|.)/gi, this._cbStr);
-
-                    } else if (t.charAt(0) === "'") {
-                        value = t.substr(1, t.length - 2);
-
-                    } else if (Neon.consts[t] !== undefined) {
-                        value = Neon.consts[t];
-
-                    } else if (Strings.isNumeric(t)) {
-                        value = parseFloat(t);
-
-                    } else if (t.match(/^\d\d\d\d-\d\d?-\d\d?(?:(?:[Tt]| +)\d\d?:\d\d(?::\d\d(?:\.\d*)?)? *(?:Z|[-+]\d\d?(?::?\d\d)?)?)?$/)) {
-                        value = DateTime.from(t);
-
-                    } else {
-                        value = t;
-
-                    }
-
-                    hasValue = true;
-
-                }
-            }
-
-            if (inlineParser) {
-                if (hasKey || hasValue) {
-                    this.addValue(result, hasKey, key, hasValue ? value : null);
-
-                }
-            } else {
-                if (hasValue && !hasKey) {
-                    if (!result.length) {
-                        result = value;
-
-                    } else {
-                        this.error();
-
-                    }
-                } else if (hasKey) {
-                    this.addValue(result, key !== null, key, hasValue ? value : null);
-
-                }
-            }
-
-            return result;
-
-        },
-
-        addValue: function(result, hasKey, key, value) {
-            if (hasKey) {
-                if (result && result.has(key)) {
-                    this.error("Duplicated key " + key);
-
-                }
-
-                result.set(key, value);
-
-            } else {
-                result.push(value);
-
-            }
-        },
-
-        _cbStr: function(m) {
-            var mapping = {t: '\t', n: '\n', r: '\r', f: '\x0C', b: '\x08', '"': '"', '\\': '\\', '/': '/', '_': '\xC2\xA0'}
-
-            if (mapping[m.charAt(1)] !== undefined) {
-                return mapping[m.charAt(1)];
-
-            } else if (m.charAt(1) === 'u' && m.length === 6) {
-                return String.fromCharCode(parseInt(m.substr(2), 16));
-
-            } else if (m.charAt(1) === 'x' && m.length === 4) {
-                return String.fromCharCode(parseInt(m.substr(2), 16));
-
-            } else {
-                this.error('Invalid escape sequence ' + m);
-
-            }
-        },
-
-        error: function(msg) {
-            var last = this.tokens[this.n] !== undefined ? this.tokens[this.n] : null,
-                pos = Tokenizer.getCoordinates(this.input, last ? last[1] : this.input.length),
-                token = last ? last[0].substr(0, 40).replace(/\n/g, '<new line>') : 'end';
-
-            throw new Error((msg || 'Unexpected %s').replace(/%s/g, token) + ' on line ' + pos[0] + ', column ' + pos[1]);
-
-        }
-
-    });
-
-    var NeonEntity = this.NeonEntity = function(value, attributes) {
-        this.value = value || null;
-        this.attributes = attributes || null;
-
-    };
-
-    _context.register(Neon, 'Neon');
-    _context.register(NeonEntity, 'NeonEntity');
-
-}, {
-    HashMap: 'Utils.HashMap',
-    Strings: 'Utils.Strings',
-    Arrays: 'Utils.Arrays',
-    DateTime: 'Utils.DateTime',
-    Tokenizer: 'Nittro.Utils.Tokenizer'
-});
-;
 _context.invoke('Nittro.Ajax', function(undefined) {
 
     var FormData = _context.extend(function() {
@@ -4783,14 +3683,13 @@ _context.invoke('Nittro.Page', function (DOM) {
     DOM: 'Utils.DOM'
 });
 ;
-_context.invoke('Nittro.Page', function (DOM, Url, Snippet) {
+_context.invoke('Nittro.Page', function (DOM, Arrays, Url, Snippet) {
 
-    var Service = _context.extend('Nittro.Object', function (ajax, transitions, formLocator, flashMessages) {
+    var Service = _context.extend('Nittro.Object', function (ajax, transitions, flashMessages, options) {
         Service.Super.call(this);
 
         this._.ajax = ajax;
         this._.transitions = transitions;
-        this._.formLocator = formLocator;
         this._.flashMessages = flashMessages;
         this._.snippets = {};
         this._.request = null;
@@ -4798,6 +3697,7 @@ _context.invoke('Nittro.Page', function (DOM, Url, Snippet) {
         this._.setup = false;
         this._.currentPhase = Snippet.INACTIVE;
         this._.currentUrl = Url.fromCurrent();
+        this._.options = Arrays.mergeTree({}, Service.defaults, options);
 
         DOM.addListener(document, 'click', this._handleClick.bind(this));
         DOM.addListener(document, 'submit', this._handleSubmit.bind(this));
@@ -4807,6 +3707,21 @@ _context.invoke('Nittro.Page', function (DOM, Url, Snippet) {
         this._checkReady();
 
     }, {
+        STATIC: {
+            defaults: {
+                whitelistRedirects: false,
+                whitelistLinks: true,
+                whitelistForms: true,
+                defaultTransition: null
+            }
+        },
+
+        setFormLocator: function (formLocator) {
+            this._.formLocator = formLocator;
+            return this;
+
+        },
+
         open: function (url, method, data) {
             return this._createRequest(url, method, data);
 
@@ -4818,6 +3733,8 @@ _context.invoke('Nittro.Page', function (DOM, Url, Snippet) {
         },
 
         sendForm: function (form, evt) {
+            this._checkFormLocator(true);
+
             var frm = this._.formLocator.getForm(form),
                 data = frm.serialize();
 
@@ -4826,6 +3743,19 @@ _context.invoke('Nittro.Page', function (DOM, Url, Snippet) {
                     frm.reset();
 
                 });
+        },
+
+        _checkFormLocator: function (need) {
+            if (this._.formLocator) {
+                return true;
+
+            } else if (!need) {
+                return false;
+
+            }
+
+            throw new Error("Nittro/Page service: Form support wasn't enabled. Please install Nittro/Application and inject the FormLocator service using the setFormLocator() method.");
+
         },
 
         _handleState: function () {
@@ -4879,30 +3809,33 @@ _context.invoke('Nittro.Page', function (DOM, Url, Snippet) {
             }
         },
 
+        _checkLink: function (link) {
+            return this._.options.whitelistLinks ? DOM.hasClass(link, 'ajax') : !DOM.hasClass(link, 'noajax');
+
+        },
+
         _handleClick: function (evt) {
             if (evt.defaultPrevented || evt.ctrlKey || evt.shiftKey || evt.altKey || evt.metaKey) {
                 return;
 
             }
 
-            var btn = DOM.closest(evt.target, 'button') || DOM.closest(evt.target, 'input'),
-                frm;
-
-            if (btn && btn.type === 'submit') {
-                if (btn.form && DOM.hasClass(btn.form, 'ajax')) {
-                    frm = this._.formLocator.getForm(btn.form);
-                    frm.setSubmittedBy(btn.name || null);
-
-                }
-
+            if (this._checkFormLocator() && this._handleButton(evt)) {
                 return;
 
             }
 
-            var link = DOM.closest(evt.target, 'a', 'ajax'),
+            var link = DOM.closest(evt.target, 'a'),
                 url;
 
-            if (!link || !(url = Url.from(link.href)).isLocal() || url.compare() === Url.PART.HASH) {
+            if (!link || !this._checkLink(link)) {
+                return;
+
+            }
+
+            url = Url.from(link.href);
+
+            if (!url.isLocal() || url.compare() === Url.PART.HASH) {
                 return;
 
             }
@@ -4911,13 +3844,34 @@ _context.invoke('Nittro.Page', function (DOM, Url, Snippet) {
 
         },
 
+        _checkForm: function (form) {
+            return this._.options.whitelistForms ? DOM.hasClass(form, 'ajax') : !DOM.hasClass(form, 'noajax');
+
+        },
+
+        _handleButton: function(evt) {
+            var btn = DOM.closest(evt.target, 'button') || DOM.closest(evt.target, 'input'),
+                frm;
+
+            if (btn && btn.type === 'submit') {
+                if (btn.form && this._checkForm(btn.form)) {
+                    frm = this._.formLocator.getForm(btn.form);
+                    frm.setSubmittedBy(btn.name || null);
+
+                }
+
+                return true;
+
+            }
+        },
+
         _handleSubmit: function (evt) {
-            if (evt.defaultPrevented) {
+            if (evt.defaultPrevented || !this._checkFormLocator()) {
                 return;
 
             }
 
-            if (!(evt.target instanceof HTMLFormElement) || !DOM.hasClass(evt.target, 'ajax')) {
+            if (!(evt.target instanceof HTMLFormElement) || !this._checkForm(evt.target)) {
                 return;
 
             }
@@ -4975,6 +3929,11 @@ _context.invoke('Nittro.Page', function (DOM, Url, Snippet) {
 
         },
 
+        _checkRedirect: function (payload) {
+            return !this._.options.whitelistRedirects !== !payload.allowAjax && Url.from(payload.redirect).isLocal();
+
+        },
+
         _handleResponse: function (queue) {
             if (!this._.request) {
                 this._cleanup();
@@ -5007,7 +3966,7 @@ _context.invoke('Nittro.Page', function (DOM, Url, Snippet) {
             }
 
             if (payload && 'redirect' in payload) {
-                if (payload.allowAjax !== false && Url.from(payload.redirect).isLocal()) {
+                if (this._checkRedirect(payload)) {
                     this._dispatchRequest(this._.ajax.createRequest(payload.redirect), null, pushState);
 
                 } else {
@@ -5154,6 +4113,11 @@ _context.invoke('Nittro.Page', function (DOM, Url, Snippet) {
         },
 
         _cleanupForms: function (snippet) {
+            if (!this._checkFormLocator()) {
+                return;
+
+            }
+
             if (snippet.tagName.toLowerCase() === 'form') {
                 this._.formLocator.removeForm(snippet);
 
@@ -5421,7 +4385,7 @@ _context.invoke('Nittro.Page', function (DOM, Url, Snippet) {
         },
 
         _getTransitionTargets: function (elem) {
-            var sel = DOM.getData(elem, 'transition'),
+            var sel = DOM.getData(elem, 'transition') || this._.options.defaultTransition,
                 elms = [];
 
             if (!sel) {
@@ -5429,7 +4393,12 @@ _context.invoke('Nittro.Page', function (DOM, Url, Snippet) {
 
             }
 
-            sel.trim().split(/\s*,\s*/g).forEach(function (sel) {
+            if (typeof sel === 'string') {
+                sel = sel.trim().split(/\s*,\s*/g);
+
+            }
+
+            sel.forEach(function (sel) {
                 if (sel.match(/^[^.#]|[\s\[>+:]/)) {
                     throw new TypeError('Invalid transition selector, only single-level .class and #id are allowed');
 
@@ -5461,7 +4430,1317 @@ _context.invoke('Nittro.Page', function (DOM, Url, Snippet) {
 
 }, {
     DOM: 'Utils.DOM',
+    Arrays: 'Utils.Arrays',
     Url: 'Utils.Url'
+});
+;
+_context.invoke('Nittro.Widgets', function (DOM, Arrays) {
+
+    var FlashMessages = _context.extend(function (options) {
+        this._ = {
+            options: Arrays.mergeTree({}, FlashMessages.defaults, options),
+            globalHolder: DOM.create('div', {'class': 'flash-global-holder'})
+        };
+
+        this._.options.layer.appendChild(this._.globalHolder);
+
+        if (!this._.options.positioning) {
+            this._.options.positioning = FlashMessages.basicPositioning;
+
+        }
+
+    }, {
+        STATIC: {
+            defaults: {
+                layer: null,
+                minMargin: 20,
+                positioning: null
+            },
+            basicPositioning: [
+                function(target, elem, minMargin) {
+                    var res = {
+                        name: 'below',
+                        left: target.left + (target.width - elem.width) / 2,
+                        top: target.bottom
+                    };
+
+                    if (target.bottom + elem.height + minMargin < window.innerHeight && res.left > 0 && res.left + elem.width < window.innerWidth) {
+                        return res;
+
+                    }
+                },
+                function (target, elem, minMargin) {
+                    var res = {
+                        name: 'rightOf',
+                        left: target.right,
+                        top: target.top + (target.height - elem.height) / 2
+                    };
+
+                    if (target.right + elem.width + minMargin < window.innerWidth && res.top > 0 && res.top + elem.height < window.innerHeight) {
+                        return res;
+
+                    }
+                },
+                function (target, elem, minMargin) {
+                    var res = {
+                        name: 'above',
+                        left: target.left + (target.width - elem.width) / 2,
+                        top: target.top - elem.height
+                    };
+
+                    if (target.top > elem.height + minMargin && res.left > 0 && res.left + elem.width < window.innerWidth) {
+                        return res;
+
+                    }
+                },
+                function (target, elem, minMargin) {
+                    var res = {
+                        name: 'leftOf',
+                        left: target.left - elem.width,
+                        top: target.top + (target.height - elem.height) / 2
+                    };
+
+                    if (target.left > elem.width + minMargin && res.top > 0 && res.top + elem.height < window.innerHeight) {
+                        return res;
+
+                    }
+                }
+            ]
+        },
+        add: function (target, type, content, rich) {
+            var elem = DOM.create('div', {
+                'class': 'flash flash-' + (type || 'info')
+            });
+
+            if (target && typeof target === 'string') {
+                target = DOM.getById(target);
+
+            }
+
+            if (rich) {
+                DOM.html(elem, content);
+
+            } else {
+                elem.textContent = content;
+
+            }
+
+            DOM.setStyle(elem, 'opacity', 0);
+            this._.options.layer.appendChild(elem);
+
+            var style = {},
+                timeout = Math.max(2000, Math.round(elem.textContent.split(/\s+/).length / 0.003));
+
+            if (target) {
+                var fixed = this._hasFixedParent(target),
+                    elemRect = this._getRect(elem),
+                    targetRect = this._getRect(target),
+                    position;
+
+                if (fixed) {
+                    style.position = 'fixed';
+
+                }
+
+                for (var i = 0; i < this._.options.positioning.length; i++) {
+                    if (position = this._.options.positioning[i].call(null, targetRect, elemRect, this._.options.minMargin)) {
+                        break;
+
+                    }
+                }
+
+                if (position) {
+                    style.left = position.left;
+                    style.top = position.top;
+
+                    if (!fixed) {
+                        style.left += window.pageXOffset;
+                        style.top += window.pageYOffset;
+
+                    }
+
+                    style.left += 'px';
+                    style.top += 'px';
+                    style.opacity = '';
+
+                    DOM.setStyle(elem, style);
+                    this._show(elem, position.name, timeout);
+                    return;
+
+                }
+            }
+
+            this._.globalHolder.appendChild(elem);
+            DOM.setStyle(elem, 'opacity', '');
+            this._show(elem, 'global', timeout);
+
+        },
+
+        _show: function (elem, position, timeout) {
+            DOM.addClass(elem, 'flash-show flash-' + position);
+
+            window.setTimeout(function () {
+                var foo = window.pageYOffset; // need to force css recalculation
+                DOM.removeClass(elem, 'flash-show');
+                this._bindHide(elem, timeout);
+
+            }.bind(this), 1);
+        },
+
+        _bindHide: function (elem, timeout) {
+            var hide = function () {
+                DOM.removeListener(document, 'mousemove', hide);
+                DOM.removeListener(document, 'mousedown', hide);
+                DOM.removeListener(document, 'keydown', hide);
+                DOM.removeListener(document, 'touchstart', hide);
+
+                window.setTimeout(function () {
+                    DOM.addClass(elem, 'flash-hide');
+
+                    window.setTimeout(function () {
+                        elem.parentNode.removeChild(elem);
+
+                    }, 1000);
+                }, timeout);
+            }.bind(this);
+
+            DOM.addListener(document, 'mousemove', hide);
+            DOM.addListener(document, 'mousedown', hide);
+            DOM.addListener(document, 'keydown', hide);
+            DOM.addListener(document, 'touchstart', hide);
+
+        },
+
+        _hasFixedParent: function (elem) {
+            do {
+                if (elem.style.position === 'fixed') return true;
+                elem = elem.offsetParent;
+
+            } while (elem && elem !== document.documentElement && elem !== document.body);
+
+            return false;
+
+        },
+
+        _getRect: function (elem) {
+            var rect = elem.getBoundingClientRect();
+
+            return {
+                left: rect.left,
+                top: rect.top,
+                right: rect.right,
+                bottom: rect.bottom,
+                width: 'width' in rect ? rect.width : (rect.right - rect.left),
+                height: 'height' in rect ? rect.height : (rect.bottom - rect.top)
+            };
+        }
+    });
+
+    _context.register(FlashMessages, 'FlashMessages');
+
+}, {
+    DOM: 'Utils.DOM',
+    Arrays: 'Utils.Arrays'
+});
+;
+_context.invoke('Utils', function (undefined) {
+
+    var DateInterval = function (interval) {
+        this._ = {
+            initialized: false,
+            interval: interval
+        };
+    };
+
+    DateInterval.from = function (interval) {
+        return new DateInterval(interval);
+
+    };
+
+    var intervalNames = [
+        'year',
+        'month',
+        'week',
+        'day',
+        'hour',
+        'minute',
+        'second',
+        'millisecond'
+    ];
+
+    var intervalLengths = [
+        31536000000,
+        604800000,
+        2678400000,
+        86400000,
+        3600000,
+        60000,
+        1000,
+        1
+    ];
+
+    var intervalHelpers = [
+        { pattern: /^y(?:ears?)?$/, toString: function(n) { return n === 1 ? 'year' : 'years' } },
+        { pattern: /^mon(?:ths?)?$/, toString: function(n) { return n === 1 ? 'month' : 'months' } },
+        { pattern: /^w(?:eeks?)?$/, toString: function(n) { return n === 1 ? 'week' : 'weeks' } },
+        { pattern: /^d(?:ays?)?$/, toString: function(n) { return n === 1 ? 'day' : 'days' } },
+        { pattern: /^h(?:ours?)?$/, toString: function(n) { return n === 1 ? 'hour' : 'hours' } },
+        { pattern: /^min(?:utes?)?$/, toString: function(n) { return n === 1 ? 'minute' : 'minutes' } },
+        { pattern: /^s(?:ec(?:onds?)?)?$/, toString: function(n) { return n === 1 ? 'second' : 'seconds' } },
+        { pattern: /^millis(?:econds?)?$|^ms$/, toString: function(n) { return n === 1 ? 'millisecond' : 'milliseconds' } }
+    ];
+
+
+    var separators = [', ', ' and '];
+
+
+    DateInterval.setHelpers = function (helpers) {
+        // @todo check helpers are valid
+        intervalHelpers = helpers;
+
+    };
+
+    DateInterval.setSeparators = function (separator, last) {
+        separators = [separator, last];
+
+    };
+
+    function getValue(interval) {
+        if (typeof interval === 'number') {
+            return interval;
+        } else if (interval instanceof DateInterval) {
+            return interval.getLength();
+        } else {
+            return DateInterval.from(interval).getLength();
+        }
+    }
+
+    DateInterval.prototype.add = function (interval) {
+        this._initialize();
+        this._.interval += getValue(interval);
+        return this;
+
+    };
+
+    DateInterval.prototype.subtract = function (interval) {
+        this._initialize();
+        this._.interval -= getValue(interval);
+        return this;
+
+    };
+
+    DateInterval.prototype.isNegative = function () {
+        this._initialize();
+        return this._.interval < 0;
+
+    };
+
+    DateInterval.prototype.getLength = function () {
+        this._initialize();
+        return this._.interval;
+
+    };
+
+    DateInterval.prototype.valueOf = function () {
+        return this.getLength();
+
+    };
+
+
+    function formatAuto(interval, precision) {
+        if (precision === true) {
+            precision = intervalNames.length;
+
+        } else if (!precision) {
+            precision = 2;
+
+        }
+
+        var i, v, str = [], last, sign = '';
+
+        if (interval < 0) {
+            sign = '-';
+            interval = -interval;
+
+        }
+
+        for (i = 0; i < intervalNames.length; i++) {
+            if (interval >= intervalLengths[i]) {
+                precision--;
+                v = interval / intervalLengths[i];
+                v = precision === 0 ? Math.round(v) : Math.floor(v);
+                str.push(v + ' ' + intervalHelpers[i].toString(v));
+                interval -= v * intervalLengths[i];
+
+                if (precision === 0) {
+                    break;
+
+                }
+            }
+        }
+
+        if (str.length > 2) {
+            last = str.pop();
+            return sign + str.join(separators[0]) + (separators[1] || separators[0]) + last;
+
+        } else {
+            return sign + str.join(separators[1] || separators[0]);
+
+        }
+    }
+
+    function format(interval, pattern) {
+        var sign = interval < 0 ? '-' : '+';
+        interval = Math.abs(interval);
+
+        return (pattern + '').replace(/%(.)/g, function (m, f) {
+            var v, pad = false;
+
+            switch (f) {
+                case '%':
+                    return '%';
+
+                case 'y':
+                    m = intervalLengths[0];
+                    break;
+
+                case 'w':
+                    m = intervalLengths[1];
+                    break;
+
+                case 'm':
+                    pad = true;
+                case 'n':
+                    m = intervalLengths[2];
+                    break;
+
+                case 'd':
+                    pad = true;
+                case 'j':
+                    m = intervalLengths[3];
+                    break;
+
+                case 'H':
+                    pad = true;
+                case 'G':
+                    m = intervalLengths[4];
+                    break;
+
+                case 'i':
+                    pad = true;
+                case 'I':
+                    m = intervalLengths[5];
+                    break;
+
+                case 's':
+                    pad = true;
+                case 'S':
+                    m = intervalLengths[6];
+                    break;
+
+                case '-':
+                    return sign === '-' ? sign : '';
+
+                case '+':
+                    return sign;
+
+                default:
+                    throw new Error('Unknown format modifier: %' + f);
+
+            }
+
+            v = Math.floor(interval / m);
+            interval -= m * v;
+            return pad && v < 10 ? '0' + v : v;
+
+        });
+    }
+
+    DateInterval.prototype.format = function (pattern) {
+        this._initialize();
+
+        if (typeof pattern === 'boolean' || typeof pattern === 'number' || !pattern) {
+            return formatAuto(this._.interval, pattern);
+
+        } else {
+            return format(this._.interval, pattern);
+
+        }
+    };
+
+    DateInterval.prototype._initialize = function () {
+        if (this._.initialized) {
+            return;
+        }
+
+        this._.initialized = true;
+
+        if (typeof this._.interval === 'number') {
+            return;
+
+        }
+
+        var interval = this._.interval;
+
+        if (interval instanceof DateInterval) {
+            this._.interval = interval.getLength();
+
+        } else if (typeof interval === 'string') {
+            if (interval.match(/^\s*(?:\+|-)?\s*\d+\s*$/)) {
+                this._.interval = parseInt(interval.trim());
+
+            } else {
+                var res = 0,
+                    sign = 1,
+                    rest;
+
+                rest = interval.replace(/\s*(\+|-)?\s*(\d+)\s+(\S+)\s*/g, function (m, s, n, k) {
+                    if (s !== undefined) {
+                        sign = s === '+' ? 1 : -1;
+
+                    }
+
+                    k = k.toLowerCase();
+                    n = parseInt(n) * sign;
+                    m = null;
+
+                    for (var i = 0; i < intervalHelpers.length; i++) {
+                        if (intervalHelpers[i].pattern.test(k)) {
+                            m = intervalLengths[i];
+                            break;
+                        }
+                    }
+
+                    if (m === null) {
+                        throw new Error('Unknown keyword: "' + k + '"');
+
+                    }
+
+                    res += n * m;
+
+                    return '';
+
+                });
+
+                if (rest.length) {
+                    throw new Error('Invalid interval specification "' + interval + '", didn\'t understand "' + rest + '"');
+
+                }
+
+                this._.interval = res;
+
+            }
+        } else {
+            throw new Error('Invalid interval specification, expected string, number or a DateInterval instance');
+
+        }
+    };
+
+    _context.register(DateInterval, 'DateInterval');
+
+});
+;
+_context.invoke('Utils', function(Strings, Arrays, DateInterval, undefined) {
+
+	var DateTime = function(d) {
+		this._ = {
+			initialized: false,
+			date: d || new Date()
+		};
+	};
+
+    DateTime.keywords = {
+        weekdays: {
+            abbrev: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+            full: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+        },
+        months: {
+            abbrev: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+            full: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+        },
+        relative: {
+            now: 'now',
+            today: 'today',
+            tomorrow: 'tomorrow',
+            yesterday: 'yesterday',
+            noon: 'noon',
+            midnight: 'midnight',
+            at: 'at'
+        }
+    };
+
+	DateTime.from = function(s) {
+		return new DateTime(s);
+
+	};
+
+	DateTime.now = function () {
+		return new DateTime();
+	};
+
+	DateTime.isDateObject = function(o) {
+		return typeof o === 'object' && o && o.date !== undefined && o.timezone !== undefined && o.timezone_type !== undefined;
+
+	};
+
+	DateTime.isLeapYear = function(y) {
+		return y % 4 === 0 && y % 100 !== 0 || y % 400 === 0;
+
+	};
+
+    DateTime.isModifyString = function (str) {
+        var kw = DateTime.keywords.relative,
+            re = new RegExp('(?:^(?:' + [kw.now, kw.yesterday, kw.tomorrow, kw.today].map(Strings.escapeRegex).join('|') + '))|' + Strings.escapeRegex(kw.noon) + '|' + Strings.escapeRegex(kw.midnight) + '|\\d?\\d(?::\\d\\d|\\s*(?:am|pm))(?:\\d\\d)?(?:\\s*(?:am|pm))?|(?:[-+]\\s*)?\\d+\\s+[^\\d\\s]', 'i');
+        return re.test(str);
+    };
+
+	DateTime.getDaysInMonth = function(m, y) {
+		return m === 2 ? (DateTime.isLeapYear(y) ? 29 : 28) : (m in {4:1,6:1,9:1,11:1} ? 30 : 31);
+
+	};
+
+	var ni = function() { throw new Error('Not implemented!'); },
+		pad = function(n) {
+			return (n < 10) ? '0' + n : n;
+		};
+
+	var formatTz = function (offset) {
+		if ((typeof offset === 'string' || offset instanceof String) && offset.match(/(\+|-)\d\d:\d\d/)) {
+			return offset;
+
+		}
+
+		if (typeof offset !== 'number') {
+			offset = parseInt(offset);
+
+		}
+
+		return (offset < 0 ? '+' : '-') + pad(parseInt(Math.abs(offset) / 60)) + ':' + pad(Math.abs(offset) % 60)
+
+	};
+
+	DateTime.getLocalTzOffset = function () {
+		return formatTz(new Date().getTimezoneOffset());
+
+	};
+
+	DateTime.formatModifiers = {
+		d: function(d, u) { return pad(u ? d.getUTCDate() : d.getDate()); },
+		D: function(d, u) { return DateTime.keywords.weekdays.abbrev[u ? d.getUTCDay() : d.getDay()]; },
+		j: function(d, u) { return u ? d.getUTCDate() : d.getDate(); },
+		l: function(d, u) { return DateTime.keywords.weekdays.full[u ? d.getUTCDay() : d.getDay()]; },
+		N: function(d, u, n) { n = u ? d.getUTCDay() : d.getDay(); return n === 0 ? 7 : n; },
+		S: function(d, u, n) { n = u ? d.getUTCDate() : d.getDate(); n %= 10; return n === 0 || n > 3 ? 'th' : ['st', 'nd', 'rd'][n - 1]; },
+		w: function(d, u) { return u ? d.getUTCDay() : d.getDay(); },
+		z: function(d, u, n, m, y, M) { n = u ? d.getUTCDate() : d.getDate(); n--; y = u ? d.getUTCFullYear() : d.getFullYear(); m = 0; M = u ? d.getUTCMonth() : d.getMonth(); while (m < M) n += DateTime.getDaysInMonth(m++, y); return n; },
+		W: ni,
+		F: function(d, u) { return DateTime.keywords.months.full[u ? d.getUTCMonth() : d.getMonth()]; },
+		m: function(d, u) { return pad((u ? d.getUTCMonth() : d.getMonth()) + 1); },
+		M: function(d, u) { return DateTime.keywords.months.abbrev[u ? d.getUTCMonth() : d.getMonth()]; },
+		n: function(d, u) { return (u ? d.getUTCMonth() : d.getMonth()) + 1; },
+		t: function(d, u) { return DateTime.getDaysInMonth(u ? d.getUTCMonth() : d.getMonth(), u ? d.getUTCFullYear() : d.getFullYear()); },
+		L: function(d, u) { return DateTime.isLeapYear(u ? d.getUTCFullYear() : d.getFullYear()) ? 1 : 0; },
+		o: ni,
+		Y: function(d, u) { return u ? d.getUTCFullYear() : d.getFullYear(); },
+		y: function(d, u) { return (u ? d.getUTCFullYear() : d.getFullYear()).toString().substr(-2); },
+		a: function(d, u, h) { h = u ? d.getUTCHours() : d.getHours(); return h >= 0 && h < 12 ? 'am' : 'pm'; },
+		A: function(d, u) { return DateTime.formatModifiers.a(d, u).toUpperCase(); },
+		g: function(d, u, h) { h = u ? d.getUTCHours() : d.getHours(); return h === 0 ? 12 : (h > 12 ? h - 12 : h); },
+		G: function(d, u) { return u ? d.getUTCHours() : d.getHours(); },
+		h: function(d, u) { return pad(DateTime.formatModifiers.g(d, u)); },
+		H: function(d, u) { return pad(u ? d.getUTCHours() : d.getHours()); },
+		i: function(d, u) { return pad(u ? d.getUTCMinutes() : d.getMinutes()); },
+		s: function(d, u) { return pad(u ? d.getUTCSeconds() : d.getSeconds()); },
+		u: function(d, u) { return (u ? d.getUTCMilliseconds() : d.getMilliseconds()) * 1000; },
+		e: ni,
+		I: ni,
+		O: function (d, u) { return DateTime.formatModifiers.P(d, u).replace(':', ''); },
+		P: function (d, u) { return u ? '+00:00' : formatTz(d.getTimezoneOffset()); },
+		T: ni,
+		Z: function (d, u) { return u ? 0 : d.getTimezoneOffset() * -60; },
+		c: function (d, u) { return DateTime.from(d).format('Y-m-d\\TH:i:sP', u); },
+		r: function (d, u) { return DateTime.from(d).format('D, n M Y G:i:s O', u); },
+		U: function(d) { return Math.round(d.getTime() / 1000); }
+	};
+
+	DateTime.prototype.format = function(f, utc) {
+		this._initialize();
+
+		var d = this._.date,
+			pattern = Strings.escapeRegex(Arrays.getKeys(DateTime.formatModifiers).join(',')).replace(/,/g, '|'),
+			re = new RegExp('(\\\\*)(' + pattern + ')', 'g');
+
+		return f.replace(re, function(s, c, m) {
+			if (c.length % 2) {
+				return c.substr(1) + m;
+
+			}
+
+			return c + '' + (DateTime.formatModifiers[m](d, utc));
+
+		});
+
+	};
+
+	[
+        'getTime',
+        'getDate', 'getDay', 'getMonth', 'getFullYear',
+        'getHours', 'getMinutes', 'getSeconds', 'getMilliseconds', 'getTimezoneOffset',
+        'getUTCDate', 'getUTCDay', 'getUTCMonth', 'getUTCFullYear',
+        'getUTCHours', 'getUTCMinutes', 'getUTCSeconds', 'getUTCMilliseconds',
+        'toDateString', 'toISOString', 'toJSON',
+        'toLocaleDateString', 'toLocaleFormat', 'toLocaleTimeString',
+        'toString', 'toTimeString', 'toUTCString'
+    ].forEach(function (method) {
+        DateTime.prototype[method] = function () {
+            this._initialize();
+            return this._.date[method].apply(this._.date, arguments);
+
+        };
+    });
+
+    [
+        'setTime',
+        'setDate', 'setMonth', 'setFullYear',
+        'setHours', 'setMinutes', 'setSeconds', 'setMilliseconds',
+        'setUTCDate', 'setUTCMonth', 'setUTCFullYear',
+        'setUTCHours', 'setUTCMinutes', 'setUTCSeconds', 'setUTCMilliseconds'
+    ].forEach(function (method) {
+        DateTime.prototype[method] = function () {
+            this._initialize();
+            this._.date[method].apply(this._.date, arguments);
+            return this;
+
+        };
+    });
+
+	DateTime.prototype.getTimestamp = function() {
+		this._initialize();
+		return Math.round(this._.date.getTime() / 1000);
+
+	};
+
+	DateTime.prototype.getDateObject = function () {
+		this._initialize();
+		return this._.date;
+
+	};
+
+	DateTime.prototype.valueOf = function () {
+		return this.getTimestamp();
+
+	};
+
+	DateTime.prototype.modify = function(s) {
+		this._initialize();
+		var t = this._.date.getTime(), r,
+            re, kw = DateTime.keywords.relative;
+
+        if (s instanceof DateInterval) {
+            this._.date = new Date(t + s.getLength());
+            return this;
+
+        }
+
+		s = s.toLowerCase();
+
+        re = new RegExp('^(' + [kw.yesterday, kw.tomorrow, kw.now, kw.today].map(Strings.escapeRegex).join('|') + ')\\s*(?:' + Strings.escapeRegex(kw.at) + '\\s*)?');
+
+		if (r = s.match(re)) {
+			s = s.substr(r[0].length);
+
+			switch (r[1]) {
+				case kw.now:
+				case kw.today:
+					t = Date.now();
+					break;
+
+				case kw.yesterday:
+					t -= 86400000;
+					break;
+
+				case kw.tomorrow:
+					t += 86400000;
+					break;
+
+			}
+		}
+
+        re = new RegExp('^(' + Strings.escapeRegex(kw.noon) + '|' + Strings.escapeRegex(kw.midnight) + '|\\d\\d?(?::\\d\\d|\\s*(?:am|pm))(?::\\d\\d)?(?:\\s*(?:am|pm))?)\\s*');
+
+        if (r = s.match(re)) {
+			s = s.substr(r[0].length);
+
+			t = new Date(t);
+
+			if (r[1] === kw.noon) {
+				t.setHours(12, 0, 0, 0);
+
+			} else if (r[1] === kw.midnight) {
+				t.setHours(0, 0, 0, 0);
+
+			} else {
+				r = r[1].match(/^(\d\d?)(?::(\d\d))?(?::(\d\d))?(?:\s*(am|pm))?$/);
+				r[1] = parseInt(r[1]);
+				r[2] = r[2] ? parseInt(r[2]) : 0;
+				r[3] = r[3] ? parseInt(r[3]) : 0;
+
+				if (r[4]) {
+					if (r[4] === 'am' && r[1] === 12) {
+						r[1] = 0;
+
+					} else if (r[4] === 'pm' && r[1] < 12) {
+						r[1] += 12;
+
+					}
+				}
+
+				t.setHours(r[1], r[2], r[3], 0);
+
+			}
+
+			t = t.getTime();
+
+		}
+
+        if (s.length && !s.match(/^\s+$/)) {
+            t += DateInterval.from(s).getLength();
+
+        }
+
+		this._.date = new Date(t);
+		return this;
+
+	};
+
+	DateTime.prototype.modifyClone = function(s) {
+		return DateTime.from(this).modify(s);
+
+	};
+
+	DateTime.prototype._initialize = function() {
+		if (this._.initialized) {
+			return;
+
+		}
+
+		this._.initialized = true;
+
+		if (typeof this._.date === 'string') {
+			var m;
+
+			if (m = this._.date.match(/^@(\d+)$/)) {
+				this._.date = new Date(m[1] * 1000);
+
+			} else if (m = this._.date.match(/^(\d\d\d\d-\d\d-\d\d)[ T](\d\d:\d\d(?::\d\d(?:\.\d+)?)?)([-+]\d\d:?\d\d)?$/)) {
+				this._.date = new Date(m[1] + 'T' + m[2] + (m[3] || ''));
+
+			} else if (DateTime.isModifyString(this._.date)) {
+				var s = this._.date;
+				this._.date = new Date();
+				this.modify(s);
+
+			} else {
+				this._.date = new Date(this._.date);
+
+			}
+		} else if (typeof this._.date === 'number') {
+			this._.date = new Date(this._.date);
+
+		} else if (DateTime.isDateObject(this._.date)) {
+			var s = this._.date.date;
+
+			if (this._.date.timezone_type !== 3 || this._.date.timezone === 'UTC') {
+				s += ' ' + this._.date.timezone;
+
+			}
+
+			this._.date = new Date(s);
+
+		} else if (this._.date instanceof DateTime) {
+			this._.date = new Date(this._.date.getTime());
+
+		}
+	};
+
+    _context.register(DateTime, 'DateTime');
+
+});
+;
+_context.invoke('Nittro.Utils', function(Nittro, Strings, Arrays, HashMap, undefined) {
+
+    var Tokenizer = _context.extend(function(patterns, matchCase) {
+        var types = false;
+
+        if (!Arrays.isArray(patterns)) {
+            if (patterns instanceof HashMap) {
+                types = patterns.getKeys();
+                patterns = patterns.getValues();
+
+            } else {
+                var tmp = patterns, type;
+                types = [];
+                patterns = [];
+
+                for (type in tmp) {
+                    if (tmp.hasOwnProperty(type)) {
+                        types.push(type);
+                        patterns.push(tmp[type]);
+
+                    }
+                }
+            }
+        }
+
+        this._ = {
+            pattern: '(' + patterns.join(')|(') + ')',
+            types: types,
+            matchCase: matchCase
+        };
+    }, {
+        STATIC: {
+            getCoordinates: function(text, offset) {
+                text = text.substr(0, offset);
+                var m = text.match(/\n/g);
+
+                return [(m ? m.length : 0) + 1, offset - ("\n" + text).lastIndexOf("\n") + 1];
+
+            }
+        },
+
+        tokenize: function(input) {
+            var re, tokens, pos, n;
+
+            if (this._.types) {
+                re = new RegExp(this._.pattern, 'gm' + (this._.matchCase ? '' : 'i'));
+                tokens = [];
+                pos = 0;
+                n = this._.types.length;
+
+                input.replace(re, function () {
+                    var ofs = arguments[n + 1],
+                        i;
+
+                    if (ofs > pos) {
+                        tokens.push([input.substr(pos, ofs - pos), pos, null]);
+
+                    }
+
+                    for (i = 1; i <= n; i++) {
+                        if (arguments[i] !== undefined) {
+                            tokens.push([arguments[i], ofs, this._.types[i - 1]]);
+                            pos = ofs + arguments[0].length;
+                            return;
+
+                        }
+                    }
+
+                    throw new Error('Unknown token type: ' + arguments[0]);
+
+                }.bind(this));
+
+                if (pos + 1 < input.length) {
+                    tokens.push([input.substr(pos), pos, null]);
+
+                }
+            } else {
+                tokens = Strings.split(input, new RegExp(this._.pattern, 'm' + (this._.matchCase ? '' : 'i')), true, true, true);
+
+            }
+
+            return tokens;
+
+        }
+    });
+
+    _context.register(Tokenizer, 'Tokenizer');
+
+}, {
+    Strings: 'Utils.Strings',
+    Arrays: 'Utils.Arrays',
+    HashMap: 'Utils.HashMap'
+});
+;
+_context.invoke('Nittro.Neon', function(Nittro, HashMap, Tokenizer, Strings, Arrays, DateTime, undefined) {
+
+    var Neon = _context.extend(function() {
+        this._cbStr = this._cbStr.bind(this);
+
+    }, {
+        STATIC: {
+            patterns: [
+                '\'[^\'\\n]*\'|"(?:\\\\.|[^"\\\\\\n])*"', //string
+                '(?:[^#"\',:=[\\]{}()\x00-\x20!`-]|[:-][^"\',\\]})\\s])(?:[^,:=\\]})(\x00-\x20]|:(?![\\s,\\]})]|$)|[ \\t]+[^#,:=\\]})(\x00-\x20])*', // literal / boolean / integer / float
+                '[,:=[\\]{}()-]', // symbol
+                '?:#.*', // comment
+                '\\n[\\t ]*', // new line + indent
+                '?:[\\t ]+' // whitespace
+            ],
+
+            brackets: {
+                '{' : '}',
+                '[' : ']',
+                '(' : ')'
+            },
+
+            consts: {
+                'true': true, 'True': true, 'TRUE': true, 'yes': true, 'Yes': true, 'YES': true, 'on': true, 'On': true, 'ON': true,
+                'false': false, 'False': false, 'FALSE': false, 'no': false, 'No': false, 'NO': false, 'off': false, 'Off': false, 'OFF': false,
+                'null': null, 'Null': null, 'NULL': null
+            },
+
+            indent: '    ',
+
+            BLOCK: 1,
+
+            encode: function(data, options) {
+                var tmp, s, isList;
+
+                if (data instanceof DateTime) {
+                    return data.format('Y-m-d H:i:s O');
+
+                } else if (data instanceof NeonEntity) {
+                    tmp = Neon.encode(data.attributes);
+                    return Neon.encode(data.value) + '(' + tmp.substr(1, tmp.length - 2) + ')';
+
+                }
+
+                if (data && typeof data === 'object') { // array or object literal
+                    s = [];
+                    isList = Arrays.isArray(data);
+
+                    if (options & Neon.BLOCK) {
+                        Arrays.walk(data, function(k, v) {
+                            v = Neon.encode(v, Neon.BLOCK);
+                            s.push(isList ? '-' : (Neon.encode(k) + ':'), Strings.contains(v, "\n") ? "\n" + Neon.indent + v.replace(/\n/g, "\n" + Neon.indent) : (' ' + v), "\n");
+
+                        });
+
+                        return s.length ? s.join('') : '[]';
+
+                    } else {
+                        Arrays.walk(data, function(k, v) {
+                            s.push(isList ? '' : (Neon.encode(k) + ': '), Neon.encode(v), ', ');
+
+                        });
+
+                        s.pop(); // remove last ', '
+                        return (isList ? '[' : "{") + s.join('') + (isList ? ']' : '}');
+
+                    }
+                } else if (typeof data === 'string' && !Strings.isNumeric(data)
+                    && !data.match(/[\x00-\x1F]|^\d{4}|^(true|false|yes|no|on|off|null)$/i)
+                    && data.match(new RegExp('^' + Neon.patterns[1] + '$'))) {
+
+                    return data;
+
+                } else {
+                    return JSON.stringify(data);
+
+                }
+            },
+
+            decode: function(input) {
+                if (typeof input !== 'string') {
+                    throw new Error('Invalid argument, must be a string');
+
+                }
+
+                if (!Neon.tokenizer) {
+                    Neon.tokenizer = new Tokenizer(Neon.patterns);
+
+                }
+
+                input = input.replace(/\r/g, '');
+
+                var parser = new Neon(),
+                    res;
+
+                parser.input = input;
+                parser.tokens = Neon.tokenizer.tokenize(input);
+
+                res = parser.parse(0, new HashMap());
+
+                while (parser.tokens[parser.n] !== undefined) {
+                    if (parser.tokens[parser.n][0].charAt(0) === "\n") {
+                        parser.n++;
+
+                    } else {
+                        parser.error();
+
+                    }
+                }
+
+                return res;
+
+            }
+        },
+
+        input: null,
+        tokens: null,
+        n: 0,
+        indentTabs: null,
+
+        parse: function(indent, result) {
+            indent === undefined && (indent = null);
+            result === undefined && (result = new HashMap());
+
+            var inlineParser = (indent === null),
+                value = null, key = null, entity = null,
+                hasValue = false, hasKey = false,
+                t;
+
+            for (; this.n < this.tokens.length; this.n++) {
+                t = this.tokens[this.n][0];
+
+                if (t === ',') {
+                    if ((!hasKey && !hasValue) || !inlineParser) {
+                        this.error();
+
+                    }
+
+                    this.addValue(result, hasKey, key, hasValue ? value : null);
+                    hasKey = hasValue = false;
+
+                } else if (t === ':' || t === '=') {
+                    if (hasKey || !hasValue) {
+                        this.error();
+
+                    }
+
+                    if (typeof value !== 'string' && typeof value !== 'number') {
+                        this.error('Unacceptable key');
+
+                    }
+
+                    key = Strings.toString(value);
+                    hasKey = true;
+                    hasValue = false;
+
+                } else if (t === '-') {
+                    if (hasKey || hasValue || inlineParser) {
+                        this.error();
+
+                    }
+
+                    key = null;
+                    hasKey = true;
+
+                } else if (Neon.brackets[t] !== undefined) {
+                    if (hasValue) {
+                        if (t !== '(') {
+                            this.error();
+
+                        }
+
+                        this.n++;
+
+                        entity = new NeonEntity();
+                        entity.value = value;
+                        entity.attributes = this.parse(null, new HashMap());
+                        value = entity;
+
+                    } else {
+                        this.n++;
+                        value = this.parse(null, new HashMap());
+
+                    }
+
+                    hasValue = true;
+
+                    if (this.tokens[this.n] === undefined || this.tokens[this.n][0] !== Neon.brackets[t]) {
+                        this.error();
+
+                    }
+
+                } else if (t === '}' || t === ']' || t === ')') {
+                    if (!inlineParser) {
+                        this.error();
+
+                    }
+
+                    break;
+
+                } else if (t.charAt(0) === "\n") {
+                    if (inlineParser) {
+                        if (hasKey || hasValue) {
+                            this.addValue(result, hasKey, key, hasValue ? value : null);
+                            hasKey = hasValue = false;
+
+                        }
+                    } else {
+                        while (this.tokens[this.n + 1] !== undefined && this.tokens[this.n + 1][0].charAt(0) === "\n") {
+                            this.n++;
+
+                        }
+
+                        if (this.tokens[this.n + 1] === undefined) {
+                            break;
+
+                        }
+
+                        var newIndent = this.tokens[this.n][0].length - 1;
+                        if (indent === null) {
+                            indent = newIndent;
+
+                        }
+
+                        if (newIndent) {
+                            if (this.indentTabs === null) {
+                                this.indentTabs = this.tokens[this.n][0].charAt(1) === "\t";
+
+                            }
+
+                            if (Strings.contains(this.tokens[this.n][0], this.indentTabs ? ' ' : "\t")) {
+                                this.n++;
+                                this.error('Either tabs or spaces may be used for indentation, not both');
+
+                            }
+                        }
+
+                        if (newIndent > indent) {
+                            if (hasValue || !hasKey) {
+                                this.n++;
+                                this.error('Unexpected indentation');
+
+                            } else {
+                                this.addValue(result, key !== null, key, this.parse(newIndent, new HashMap()));
+
+                            }
+
+                            newIndent = this.tokens[this.n] !== undefined ? this.tokens[this.n][0].length - 1 : 0;
+                            hasKey = false;
+
+                        } else {
+                            if (hasValue && !hasKey) {
+                                break;
+
+                            } else if (hasKey) {
+                                this.addValue(result, key !== null, key, hasValue ? value : null);
+                                hasKey = hasValue = false;
+
+                            }
+                        }
+
+                        if (newIndent < indent) {
+                            return result;
+
+                        }
+                    }
+                } else {
+                    if (hasValue) {
+                        this.error();
+
+                    }
+
+                    if (t.charAt(0) === '"') {
+                        value = t.substr(1, t.length - 2).replace(/\\(?:u[0-9a-f]{4}|x[0-9a-f]{2}|.)/gi, this._cbStr);
+
+                    } else if (t.charAt(0) === "'") {
+                        value = t.substr(1, t.length - 2);
+
+                    } else if (Neon.consts[t] !== undefined) {
+                        value = Neon.consts[t];
+
+                    } else if (Strings.isNumeric(t)) {
+                        value = parseFloat(t);
+
+                    } else if (t.match(/^\d\d\d\d-\d\d?-\d\d?(?:(?:[Tt]| +)\d\d?:\d\d(?::\d\d(?:\.\d*)?)? *(?:Z|[-+]\d\d?(?::?\d\d)?)?)?$/)) {
+                        value = DateTime.from(t);
+
+                    } else {
+                        value = t;
+
+                    }
+
+                    hasValue = true;
+
+                }
+            }
+
+            if (inlineParser) {
+                if (hasKey || hasValue) {
+                    this.addValue(result, hasKey, key, hasValue ? value : null);
+
+                }
+            } else {
+                if (hasValue && !hasKey) {
+                    if (!result.length) {
+                        result = value;
+
+                    } else {
+                        this.error();
+
+                    }
+                } else if (hasKey) {
+                    this.addValue(result, key !== null, key, hasValue ? value : null);
+
+                }
+            }
+
+            return result;
+
+        },
+
+        addValue: function(result, hasKey, key, value) {
+            if (hasKey) {
+                if (result && result.has(key)) {
+                    this.error("Duplicated key " + key);
+
+                }
+
+                result.set(key, value);
+
+            } else {
+                result.push(value);
+
+            }
+        },
+
+        _cbStr: function(m) {
+            var mapping = {t: '\t', n: '\n', r: '\r', f: '\x0C', b: '\x08', '"': '"', '\\': '\\', '/': '/', '_': '\xC2\xA0'}
+
+            if (mapping[m.charAt(1)] !== undefined) {
+                return mapping[m.charAt(1)];
+
+            } else if (m.charAt(1) === 'u' && m.length === 6) {
+                return String.fromCharCode(parseInt(m.substr(2), 16));
+
+            } else if (m.charAt(1) === 'x' && m.length === 4) {
+                return String.fromCharCode(parseInt(m.substr(2), 16));
+
+            } else {
+                this.error('Invalid escape sequence ' + m);
+
+            }
+        },
+
+        error: function(msg) {
+            var last = this.tokens[this.n] !== undefined ? this.tokens[this.n] : null,
+                pos = Tokenizer.getCoordinates(this.input, last ? last[1] : this.input.length),
+                token = last ? last[0].substr(0, 40).replace(/\n/g, '<new line>') : 'end';
+
+            throw new Error((msg || 'Unexpected %s').replace(/%s/g, token) + ' on line ' + pos[0] + ', column ' + pos[1]);
+
+        }
+
+    });
+
+    var NeonEntity = this.NeonEntity = function(value, attributes) {
+        this.value = value || null;
+        this.attributes = attributes || null;
+
+    };
+
+    _context.register(Neon, 'Neon');
+    _context.register(NeonEntity, 'NeonEntity');
+
+}, {
+    HashMap: 'Utils.HashMap',
+    Strings: 'Utils.Strings',
+    Arrays: 'Utils.Arrays',
+    DateTime: 'Utils.DateTime',
+    Tokenizer: 'Nittro.Utils.Tokenizer'
 });
 ;
 _context.invoke('Nittro.Forms', function (DOM, Arrays) {
@@ -6680,10 +6959,10 @@ _context.invoke('Nittro.Application.Routing', function (Nittro, DOMRoute, URLRou
 ;
 _context.invoke('Nittro.Widgets', function(DOM, Arrays) {
 
-    var DialogBase = _context.extend('Nittro.Object', function(options) {
-        DialogBase.Super.call(this);
+    var Dialog = _context.extend('Nittro.Object', function(options) {
+        Dialog.Super.call(this);
 
-        this._.options = Arrays.mergeTree({}, DialogBase.getDefaults(this.constructor), options);
+        this._.options = Arrays.mergeTree({}, Dialog.getDefaults(this.constructor), options);
         this._.visible = false;
         this._.scrollPosition = null;
 
@@ -6696,6 +6975,13 @@ _context.invoke('Nittro.Widgets', function(DOM, Arrays) {
 
         this._.elms.holder.appendChild(this._.elms.wrapper);
         this._.elms.wrapper.appendChild(this._.elms.content);
+
+        if (this._.options.text) {
+            this._.options.html = '<p>' + this._.options.text + '</p>';
+
+        }
+
+        DOM.html(this._.elms.content, this._.options.html);
 
         if (this._.options.buttons) {
             this._.elms.wrapper.appendChild(this._.elms.buttons);
@@ -6722,6 +7008,8 @@ _context.invoke('Nittro.Widgets', function(DOM, Arrays) {
     }, {
         STATIC: {
             defaults: {
+                html: null,
+                text: null,
                 buttons: null,
                 keyMap: {},
                 templates: {
@@ -6748,13 +7036,13 @@ _context.invoke('Nittro.Widgets', function(DOM, Arrays) {
                             }
                         }
                     }
-                } while (type && type !== DialogBase);
+                } while (type && type !== Dialog);
 
                 return defaults;
 
             },
             setDefaults: function(options) {
-                Arrays.mergeTree(DialogBase.defaults, options);
+                Arrays.mergeTree(Dialog.defaults, options);
 
             }
         },
@@ -6926,38 +7214,6 @@ _context.invoke('Nittro.Widgets', function(DOM, Arrays) {
         _handleScroll: function () {
             window.scrollTo(this._.scrollLock.left, this._.scrollLock.top);
 
-        }
-    });
-
-    _context.register(DialogBase, 'DialogBase');
-
-}, {
-    DOM: 'Utils.DOM',
-    Arrays: 'Utils.Arrays'
-});
-;
-_context.invoke('Nittro.Widgets', function(DialogBase, DOM, Arrays) {
-
-    var Dialog = _context.extend(DialogBase, function(options) {
-        Dialog.Super.call(this, options);
-
-        if (this._.options.text) {
-            this._.options.html = '<p>' + this._.options.text + '</p>';
-
-        }
-
-        DOM.html(this._.elms.content, this._.options.html);
-
-    }, {
-        STATIC: {
-            defaults: {
-                html: null,
-                text: null
-            },
-            setDefaults: function(options) {
-                Arrays.mergeTree(Dialog.defaults, options);
-
-            }
         }
     });
 
@@ -7138,215 +7394,6 @@ _context.invoke('Nittro.Widgets', function(Dialog, Form, DOM, Arrays) {
 
 }, {
     Form: 'Nittro.Forms.Form',
-    DOM: 'Utils.DOM',
-    Arrays: 'Utils.Arrays'
-});
-;
-_context.invoke('Nittro.Widgets', function (DOM, Arrays) {
-
-    var FlashMessages = _context.extend(function (options) {
-        this._ = {
-            options: Arrays.mergeTree({}, FlashMessages.defaults, options),
-            globalHolder: DOM.create('div', {'class': 'flash-global-holder'})
-        };
-
-        this._.options.layer.appendChild(this._.globalHolder);
-
-        if (!this._.options.positioning) {
-            this._.options.positioning = FlashMessages.basicPositioning;
-
-        }
-
-    }, {
-        STATIC: {
-            defaults: {
-                layer: null,
-                minMargin: 20,
-                positioning: null
-            },
-            basicPositioning: [
-                function(target, elem, minMargin) {
-                    var res = {
-                        name: 'below',
-                        left: target.left + (target.width - elem.width) / 2,
-                        top: target.bottom
-                    };
-
-                    if (target.bottom + elem.height + minMargin < window.innerHeight && res.left > 0 && res.left + elem.width < window.innerWidth) {
-                        return res;
-
-                    }
-                },
-                function (target, elem, minMargin) {
-                    var res = {
-                        name: 'rightOf',
-                        left: target.right,
-                        top: target.top + (target.height - elem.height) / 2
-                    };
-
-                    if (target.right + elem.width + minMargin < window.innerWidth && res.top > 0 && res.top + elem.height < window.innerHeight) {
-                        return res;
-
-                    }
-                },
-                function (target, elem, minMargin) {
-                    var res = {
-                        name: 'above',
-                        left: target.left + (target.width - elem.width) / 2,
-                        top: target.top - elem.height
-                    };
-
-                    if (target.top > elem.height + minMargin && res.left > 0 && res.left + elem.width < window.innerWidth) {
-                        return res;
-
-                    }
-                },
-                function (target, elem, minMargin) {
-                    var res = {
-                        name: 'leftOf',
-                        left: target.left - elem.width,
-                        top: target.top + (target.height - elem.height) / 2
-                    };
-
-                    if (target.left > elem.width + minMargin && res.top > 0 && res.top + elem.height < window.innerHeight) {
-                        return res;
-
-                    }
-                }
-            ]
-        },
-        add: function (target, type, content, rich) {
-            var elem = DOM.create('div', {
-                'class': 'flash flash-' + (type || 'info')
-            });
-
-            if (target && typeof target === 'string') {
-                target = DOM.getById(target);
-
-            }
-
-            if (rich) {
-                DOM.html(elem, content);
-
-            } else {
-                elem.textContent = content;
-
-            }
-
-            DOM.setStyle(elem, 'opacity', 0);
-            this._.options.layer.appendChild(elem);
-
-            var style = {},
-                timeout = Math.max(2000, Math.round(elem.textContent.split(/\s+/).length / 0.003));
-
-            if (target) {
-                var fixed = this._hasFixedParent(target),
-                    elemRect = this._getRect(elem),
-                    targetRect = this._getRect(target),
-                    position;
-
-                if (fixed) {
-                    style.position = 'fixed';
-
-                }
-
-                for (var i = 0; i < this._.options.positioning.length; i++) {
-                    if (position = this._.options.positioning[i].call(null, targetRect, elemRect, this._.options.minMargin)) {
-                        break;
-
-                    }
-                }
-
-                if (position) {
-                    style.left = position.left;
-                    style.top = position.top;
-
-                    if (!fixed) {
-                        style.left += window.pageXOffset;
-                        style.top += window.pageYOffset;
-
-                    }
-
-                    style.left += 'px';
-                    style.top += 'px';
-                    style.opacity = '';
-
-                    DOM.setStyle(elem, style);
-                    this._show(elem, position.name, timeout);
-                    return;
-
-                }
-            }
-
-            this._.globalHolder.appendChild(elem);
-            DOM.setStyle(elem, 'opacity', '');
-            this._show(elem, 'global', timeout);
-
-        },
-
-        _show: function (elem, position, timeout) {
-            DOM.addClass(elem, 'flash-show flash-' + position);
-
-            window.setTimeout(function () {
-                var foo = window.pageYOffset; // need to force css recalculation
-                DOM.removeClass(elem, 'flash-show');
-                this._bindHide(elem, timeout);
-
-            }.bind(this), 1);
-        },
-
-        _bindHide: function (elem, timeout) {
-            var hide = function () {
-                DOM.removeListener(document, 'mousemove', hide);
-                DOM.removeListener(document, 'mousedown', hide);
-                DOM.removeListener(document, 'keydown', hide);
-                DOM.removeListener(document, 'touchstart', hide);
-
-                window.setTimeout(function () {
-                    DOM.addClass(elem, 'flash-hide');
-
-                    window.setTimeout(function () {
-                        elem.parentNode.removeChild(elem);
-
-                    }, 1000);
-                }, timeout);
-            }.bind(this);
-
-            DOM.addListener(document, 'mousemove', hide);
-            DOM.addListener(document, 'mousedown', hide);
-            DOM.addListener(document, 'keydown', hide);
-            DOM.addListener(document, 'touchstart', hide);
-
-        },
-
-        _hasFixedParent: function (elem) {
-            do {
-                if (elem.style.position === 'fixed') return true;
-                elem = elem.offsetParent;
-
-            } while (elem && elem !== document.documentElement && elem !== document.body);
-
-            return false;
-
-        },
-
-        _getRect: function (elem) {
-            var rect = elem.getBoundingClientRect();
-
-            return {
-                left: rect.left,
-                top: rect.top,
-                right: rect.right,
-                bottom: rect.bottom,
-                width: 'width' in rect ? rect.width : (rect.right - rect.left),
-                height: 'height' in rect ? rect.height : (rect.bottom - rect.top)
-            };
-        }
-    });
-
-    _context.register(FlashMessages, 'FlashMessages');
-
-}, {
     DOM: 'Utils.DOM',
     Arrays: 'Utils.Arrays'
 });

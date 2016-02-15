@@ -1,14 +1,18 @@
 _context.invoke(function(Nittro) {
 
-    Nittro.Widgets.DialogBase.setDefaults({
+    Nittro.Widgets.Dialog.setDefaults({
         layer: document.body
     });
 
     var di = new Nittro.DI.Context({
         params: {
-            basePath: '',
             flashes: {
                 layer: document.body
+            },
+            page: {
+                whitelistLinks: false,
+                whitelistForms: false,
+                defaultTransition: '.transition-fade, .transition-slide'
             }
         },
         services: {
@@ -22,9 +26,15 @@ _context.invoke(function(Nittro) {
                 ]
             },
             'router': 'Nittro.Application.Routing.Router(@page)!',
-            'page': 'Nittro.Page.Service(@ajax, @transitions, @formLocator, @flashMessages)!',
+            'page': {
+                factory: 'Nittro.Page.Service(options: %page%)',
+                run: true,
+                setup: [
+                    '::setFormLocator()'
+                ]
+            },
             'transitions': 'Nittro.Page.Transitions(300)',
-            'formLocator': 'Nittro.Forms.Locator(@flashMessages)',
+            'formLocator': 'Nittro.Forms.Locator()',
             'flashMessages': 'Nittro.Widgets.FlashMessages(%flashes%)'
         },
         factories: {
