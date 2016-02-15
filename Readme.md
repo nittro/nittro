@@ -1,12 +1,13 @@
 Nittro
 =======
 
-[![Build Status](https://travis-ci.org/nittro/nittro.svg?branch=master)](https://travis-ci.org/nittro/nittro)
-
 Nittro is a javascript client-side framework and library specifically designed to be used with the [Nette framework](https://nette.org).
 
-#### Nittro renamed!
-Nittro used to be briefly known as NetteJS, but NetteJS is no more. It's only Nittro now.
+#### Nittro renamed and cut up to pieces!
+Nittro used to be briefly known as NetteJS, but NetteJS is no more. It's only Nittro now. And it's been divided
+into more repositories. Independent packages, or rather packages with a uni-directional dependency chain, so
+you're always able to select the smallest package that will suit your needs, but you'll still be able to upgrade
+anytime.
 
 The documentation is [right this way](https://github.com/nittro/nittro/wiki).
 
