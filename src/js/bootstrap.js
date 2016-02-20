@@ -12,7 +12,7 @@ _context.invoke(function(Nittro) {
             page: {
                 whitelistLinks: false,
                 whitelistForms: false,
-                defaultTransition: '.transition-fade, .transition-slide'
+                defaultTransition: '.transition-auto'
             }
         },
         services: {
@@ -25,7 +25,7 @@ _context.invoke(function(Nittro) {
                     '::addTransport(Nittro.Ajax.Transport.Native())'
                 ]
             },
-            'router': 'Nittro.Application.Routing.Router(@page)!',
+            'router': 'Nittro.Application.Routing.Router()!',
             'page': {
                 factory: 'Nittro.Page.Service(options: %page%)',
                 run: true,

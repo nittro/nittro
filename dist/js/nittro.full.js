@@ -355,7 +355,7 @@ Nette.validators = {
 
 	pattern: function(elem, arg, val) {
 		try {
-			return typeof arg === 'string' ? (new RegExp('^(' + arg + ')$')).test(val) : null;
+			return typeof arg === 'string' ? (new RegExp('^(?:' + arg + ')$')).test(val) : null;
 		} catch (e) {}
 	},
 
@@ -2552,7 +2552,7 @@ _context.invoke('Utils', function (Arrays, Strings, undefined) {
     };
 
     var getElem = function (elem) {
-        Arrays.isArray(elem) && (elem = elem[0]);
+        Arrays.isArrayLike(elem) && (elem = elem[0]);
         return typeof elem === 'string' ? DOM.getById(elem) : elem;
 
     };
@@ -2584,9 +2584,21 @@ _context.invoke('Utils', function (Arrays, Strings, undefined) {
 
     };
 
+    var parseData = function (value) {
+        if (!value) return null;
+
+        try {
+            return JSON.parse(value);
+
+        } catch (e) {
+            return value;
+
+        }
+    };
+
     var DOM = {
-        getByClassName: function (className) {
-            return Arrays.createFrom(document.getElementsByClassName(className));
+        getByClassName: function (className, context) {
+            return Arrays.createFrom((context || document).getElementsByClassName(className));
 
         },
 
@@ -2595,8 +2607,42 @@ _context.invoke('Utils', function (Arrays, Strings, undefined) {
 
         },
 
+        find: function (sel, context) {
+            var elems = [];
+            sel = sel.trim().split(/\s*,\s*/g);
+
+            sel.forEach(function (s) {
+                var m = s.match(/^#([^\s\[>+:\.]+)\s+\.([^\s\[>+:]+)$/);
+
+                if (m) {
+                    elems.push.apply(elems, DOM.getByClassName(m[2], DOM.getById(m[1])));
+                    return;
+
+                } else if (s.match(/^[^.#]|[\s\[>+:]/)) {
+                    throw new TypeError('Invalid selector "' + s + '", only single-level .class and #id or "#id .class" are allowed');
+
+                }
+
+                if (s.charAt(0) === '#') {
+                    m = DOM.getById(s.substr(1));
+
+                    if (m) {
+                        elems.push(m);
+
+                    }
+                } else {
+                    m = DOM.getByClassName(s.substr(1), context);
+                    elems.push.apply(elems, m);
+
+                }
+            });
+
+            return elems;
+
+        },
+
         getChildren: function (elem) {
-            return Arrays.createFrom(elem.childNodes).filter(function (node) {
+            return Arrays.createFrom(elem.childNodes || '').filter(function (node) {
                 return node.nodeType === 1;
 
             });
@@ -2717,81 +2763,49 @@ _context.invoke('Utils', function (Arrays, Strings, undefined) {
             });
         },
 
-        contains: null,
-        addListener: null,
-        removeListener: null,
-        addClass: null,
-        removeClass: null,
-        toggleClass: null,
-        hasClass: null,
-        getData: null,
-        setData: null
-    };
-
-
-
-    var rnative = /^[^{]+\{\s*\[native \w/;
-
-    if (rnative.test(document.documentElement.compareDocumentPosition) || rnative.test(document.documentElement.contains)) {
-        DOM.contains = function( a, b ) {
+        contains: function( a, b ) {
             var adown = a.nodeType === 9 ? a.documentElement : a,
                 bup = b && b.parentNode;
+
             return a === bup || !!( bup && bup.nodeType === 1 && (
                     adown.contains
                         ? adown.contains( bup )
                         : a.compareDocumentPosition && a.compareDocumentPosition( bup ) & 16
                 ));
-        };
-    } else {
-        DOM.contains = function( a, b ) {
-            if ( b ) {
-                while ( (b = b.parentNode) ) {
-                    if ( b === a ) {
-                        return true;
-                    }
-                }
-            }
-            return false;
-        };
-    }
+        },
 
-
-    if ('addEventListener' in document) {
-        DOM.addListener = function (elem, evt, listener) {
+        addListener: function (elem, evt, listener) {
             return map(arguments, function (elem, evt, listener) {
                 elem.addEventListener(evt, listener, false);
                 return elem;
 
             });
-        };
-
-        DOM.removeListener = function (elem, evt, listener) {
+        },
+        removeListener: function (elem, evt, listener) {
             return map(arguments, function (elem, evt, listener) {
                 elem.removeEventListener(evt, listener, false);
                 return elem;
 
             });
-        };
-    } else if ('attachEvent' in document) {
-        DOM.addListener = function (elem, evt, listener) {
-            return map(arguments, function (elem, evt, listener) {
-                elem.attachEvent('on' + evt, listener);
+        },
+
+        getData: function (elem, key) {
+            return parseData(getElem(elem).getAttribute('data-' + key));
+
+        },
+        setData: function (elem, key, value) {
+            return map([elem], function (elem) {
+                elem.setAttribute('data-' + key, JSON.stringify(value));
                 return elem;
 
             });
-        };
+        },
 
-        DOM.removeListener = function (elem, evt, listener) {
-            return map(arguments, function (elem, evt, listener) {
-                elem.detachEvent('on' + evt, listener);
-                return elem;
-
-            });
-        };
-    } else {
-        throw new Error('Unsupported browser');
-
-    }
+        addClass: null,
+        removeClass: null,
+        toggleClass: null,
+        hasClass: null
+    };
 
 
     var testElem = DOM.create('span'),
@@ -2972,64 +2986,6 @@ _context.invoke('Utils', function (Arrays, Strings, undefined) {
 
             return true;
 
-        };
-    }
-
-    var reint = /^-?(?:(?:0|[1-9]\d*)|[1-9]\d*e(?:\+|-)\d+)$/i,
-        refloat = /^-?(?:(?:0|[1-9]\d*)\.\d+|[1-9]\d*\.\d+e(?:\+|-)\d+)$/i,
-        rebool = /^(?:true|false)$/i,
-        renull = /^null$/i;
-
-    var parseData = function (value) {
-        switch (true) {
-            case reint.test(value): return parseInt(value);
-            case refloat.test(value): return parseFloat(value);
-            case rebool.test(value): return value.toLowerCase() === 'true';
-            case renull.test(value): return null;
-            default:
-                try {
-                    return JSON.parse(value);
-
-                } catch (e) {
-                    return value;
-
-                }
-        }
-    };
-
-    testElem.setAttribute('data-test-prop', 'test-value');
-
-    if ('dataset' in testElem && 'testProp' in testElem.dataset) {
-        DOM.getData = function (elem, key) {
-            return parseData(getElem(elem).dataset[key]);
-
-        };
-
-        DOM.setData = function (elem, key, value) {
-            return map([elem], function (elem) {
-                elem.dataset[key] = JSON.stringify(value);
-                return elem;
-
-            });
-        };
-    } else {
-        var key2attr = function (key) {
-                return 'data-' + key.replace(/[A-Z]/g, function (m) {
-                    return '-' + m[0].toLowerCase();
-                });
-            };
-
-        DOM.getData = function (elem, key) {
-            return parseData(getElem(elem).getAttribute(key2attr(key)));
-
-        };
-
-        DOM.setData = function (elem, key, value) {
-            return map([elem], function (elem) {
-                elem.setAttribute(key2attr(key), JSON.stringify(value));
-                return elem;
-
-            });
         };
     }
 
@@ -4016,12 +3972,14 @@ _context.invoke('Nittro.Ajax.Transport', function (Response, FormData, Url) {
     FormData: 'Nittro.Ajax.FormData'
 });
 ;
-_context.invoke('Nittro.Page', function (DOM) {
+_context.invoke('Nittro.Page', function (DOM, undefined) {
 
     var Snippet = _context.extend(function (id, state) {
         this._ = {
             id: id,
+            container: false,
             state: typeof state === 'number' ? state : Snippet.INACTIVE,
+            data: {},
             handlers: [
                 [], [], [], []
             ]
@@ -4033,6 +3991,11 @@ _context.invoke('Nittro.Page', function (DOM) {
             RUN_SETUP: 1,
             PREPARE_TEARDOWN: 2,
             RUN_TEARDOWN: 3
+        },
+
+        getId: function () {
+            return this._.id;
+
         },
 
         setup: function (prepare, run) {
@@ -4106,7 +4069,7 @@ _context.invoke('Nittro.Page', function (DOM) {
 
                 });
 
-            } else if ((this._.state + 1) % 4 === state) {
+            } else if (state - 1 === this._.state) {
                 this._.state = state;
 
                 var elm = this.getElement();
@@ -4129,6 +4092,28 @@ _context.invoke('Nittro.Page', function (DOM) {
 
         },
 
+        getData: function (key, def) {
+            return key in this._.data ? this._.data[key] : (def === undefined ? null : def);
+
+        },
+
+        setData: function (key, value) {
+            this._.data[key] = value;
+            return this;
+
+        },
+
+        setContainer: function () {
+            this._.container = true;
+            return this;
+
+        },
+
+        isContainer: function () {
+            return this._.container;
+
+        },
+
         getElement: function () {
             return DOM.getById(this._.id);
 
@@ -4141,7 +4126,548 @@ _context.invoke('Nittro.Page', function (DOM) {
     DOM: 'Utils.DOM'
 });
 ;
-_context.invoke('Nittro.Page', function (DOM) {
+_context.invoke('Nittro.Page', function (Snippet, DOM) {
+
+    var SnippetHelpers = {
+        _getTransitionTargets: function (elem) {
+            var sel = DOM.getData(elem, 'transition') || this._.options.defaultTransition;
+            return sel ? DOM.find(sel) : [];
+
+        },
+
+        _getRemoveTargets: function (elem) {
+            var sel = DOM.getData(elem, 'dynamic-remove');
+            return sel ? DOM.find(sel) : [];
+
+        },
+
+        _getDynamicContainerCache: function () {
+            if (this._.containerCache === null) {
+                this._.containerCache = DOM.getByClassName('snippet-container')
+                    .map(function (elem) {
+                        return elem.id;
+                    });
+            }
+
+            return this._.containerCache;
+
+        },
+
+        _clearDynamicContainerCache: function () {
+            this._.containerCache = null;
+
+        },
+
+        _getDynamicContainer: function (id) {
+            var cache = this._getDynamicContainerCache(),
+                i, n, container, data;
+
+            for (i = 0, n = cache.length; i < n; i++) {
+                container = this.getSnippet(cache[i]);
+
+                if (!container.isContainer()) {
+                    data = this._prepareDynamicContainer(container);
+
+                } else {
+                    data = container.getData('_container');
+
+                }
+
+                if (data.mask.test(id)) {
+                    return data;
+
+                }
+            }
+
+            throw new Error('Dynamic snippet #' + id + ' has no container');
+
+        },
+
+        _applySnippets: function (snippets, removeElms) {
+            var setup = {},
+                teardown = {},
+                dynamic = [],
+                containers = {};
+
+            this._clearDynamicContainerCache();
+
+            this._prepareStaticSnippets(snippets, setup, teardown, dynamic, removeElms);
+            this._prepareDynamicSnippets(dynamic, snippets, containers);
+            this._prepareRemoveTargets(removeElms, teardown);
+
+            this._teardown(teardown);
+
+            this._applyRemove(removeElms);
+            this._applyContainers(containers, teardown);
+            this._applySetup(setup, snippets);
+
+            this._setup();
+
+            return dynamic.map(function (snippet) {
+                if (!snippet.elem) {
+                    DOM.addClass(snippet.content, 'dynamic-add');
+                    return snippet.content;
+
+                } else {
+                    DOM.addClass(snippet.elem, 'dynamic-update');
+                    return snippet.elem;
+
+                }
+            });
+        },
+
+        _prepareDynamicContainer: function (snippet) {
+            var elem = snippet.getElement(),
+                data = {
+                    id: snippet.getId(),
+                    mask: new RegExp('^' + DOM.getData(elem, 'dynamic-mask') + '$'),
+                    element: DOM.getData(elem, 'dynamic-element') || 'div',
+                    sort: DOM.getData(elem, 'dynamic-sort') || 'append',
+                    sortCache: DOM.getData(elem, 'dynamic-sort-cache') === false ? false : null
+                };
+
+            snippet.setContainer();
+            snippet.setData('_container', data);
+            return data;
+
+        },
+
+        _prepareRemoveTargets: function (removeElms, teardown) {
+            for (var i = 0; i < removeElms.length; i++) {
+                this._prepareRemoveTarget(removeElms[i], teardown);
+
+            }
+        },
+
+        _prepareRemoveTarget: function (elem, teardown) {
+            this._cleanupChildSnippets(elem, teardown);
+            this._cleanupForms(elem);
+
+            if (this.isSnippet(elem)) {
+                teardown[elem.id] = true;
+
+            }
+        },
+
+        _prepareStaticSnippets: function (snippets, setup, teardown, dynamic, removeElms) {
+            for (var id in snippets) {
+                if (snippets.hasOwnProperty(id)) {
+                    this._prepareStaticSnippet(id, setup, teardown, dynamic, removeElms);
+
+                }
+            }
+        },
+
+        _prepareStaticSnippet: function (id, setup, teardown, dynamic, removeElms) {
+            if (this._.snippets[id] && this._.snippets[id].getState() === Snippet.RUN_SETUP) {
+                teardown[id] = false;
+
+            }
+
+            var snippet = DOM.getById(id),
+                dyn;
+
+            if (snippet) {
+                dyn = DOM.hasClass(snippet.parentNode, 'snippet-container');
+
+                if (!removeElms.length || removeElms.indexOf(snippet) === -1) {
+                    this._cleanupChildSnippets(snippet, teardown);
+                    this._cleanupForms(snippet);
+
+                    if (dyn) {
+                        dynamic.push({id: id, elem: snippet});
+
+                    } else {
+                        setup[id] = snippet;
+
+                    }
+                } else {
+                    dynamic.push({id: id});
+
+                }
+            } else {
+                dynamic.push({id: id});
+
+            }
+        },
+
+        _prepareDynamicSnippets: function (dynamic, snippets, containers) {
+            for (var i = 0; i < dynamic.length; i++) {
+                this._prepareDynamicSnippet(dynamic[i], snippets[dynamic[i].id], containers);
+
+            }
+        },
+
+        _prepareDynamicSnippet: function (snippet, content, containers) {
+            var container = this._getDynamicContainer(snippet.id);
+
+            snippet.content = this._createDynamic(container.element, snippet.id, content);
+
+            if (!containers[container.id]) {
+                containers[container.id] = [];
+
+            }
+
+            containers[container.id].push(snippet);
+
+        },
+
+        _createDynamic: function (elem, id, html) {
+            elem = elem.split(/\./g);
+            elem[0] = DOM.create(elem, { id: id });
+
+            if (elem.length > 1) {
+                DOM.addClass.apply(null, elem);
+
+            }
+
+            elem = elem[0];
+            DOM.html(elem, html);
+            return elem;
+
+        },
+
+        _applyRemove: function (removeElms) {
+            removeElms.forEach(function (elem) {
+                elem.parentNode.removeChild(elem);
+
+            });
+        },
+
+        _applySetup: function (snippets, data) {
+            for (var id in snippets) {
+                if (snippets.hasOwnProperty(id)) {
+                    DOM.html(snippets[id], data[id]);
+
+                }
+            }
+        },
+
+        _applyContainers: function (containers, teardown) {
+            for (var id in containers) {
+                if (containers.hasOwnProperty(id)) {
+                    this._applyDynamic(this.getSnippet(id), containers[id], teardown);
+
+                }
+            }
+        },
+
+        _applyDynamic: function (container, snippets, teardown) {
+            var containerData = container.getData('_container');
+
+            if (containerData.sort === 'append') {
+                this._appendDynamic(container.getElement(), snippets);
+
+            } else if (containerData.sort === 'prepend') {
+                this._prependDynamic(container.getElement(), snippets);
+
+            } else {
+                this._sortDynamic(containerData, container.getElement(), snippets, teardown);
+
+            }
+        },
+
+        _appendDynamic: function (elem, snippets) {
+            snippets.forEach(function (snippet) {
+                if (snippet.elem) {
+                    DOM.html(snippet.elem, snippet.content.innerHTML);
+
+                } else {
+                    elem.appendChild(snippet.content);
+
+                }
+            });
+        },
+
+        _prependDynamic: function (elem, snippets) {
+            var first = elem.firstChild;
+
+            snippets.forEach(function (snippet) {
+                if (snippet.elem) {
+                    DOM.html(snippet.elem, snippet.content.innerHTML);
+
+                } else {
+                    elem.insertBefore(snippet.content, first);
+
+                }
+            });
+        },
+
+        _sortDynamic: function (container, elem, snippets, teardown) {
+            var sortData = this._getSortData(container, elem, teardown);
+            this._mergeSortData(sortData, snippets.map(function(snippet) { return snippet.content; }));
+
+            var sorted = this._applySort(sortData);
+            snippets = this._getSnippetMap(snippets);
+
+            this._insertSorted(elem, sorted, snippets);
+
+        },
+
+        _insertSorted: function (container, sorted, snippets) {
+            var i = 0, n = sorted.length, tmp;
+
+            tmp = container.firstElementChild;
+
+            while (i < n && sorted[i] in snippets && !snippets[sorted[i]].elem) {
+                container.insertBefore(snippets[sorted[i]].content, tmp);
+                i++;
+
+            }
+
+            while (n > i && sorted[n - 1] in snippets && !snippets[sorted[n - 1]].elem) {
+                n--;
+
+            }
+
+            for (; i < n; i++) {
+                if (sorted[i] in snippets) {
+                    if (snippets[sorted[i]].elem) {
+                        snippets[sorted[i]].elem.innerHTML = '';
+
+                        if (snippets[sorted[i]].elem.previousElementSibling !== (i > 0 ? DOM.getById(sorted[i - 1]) : null)) {
+                            container.insertBefore(snippets[sorted[i]].elem, i > 0 ? DOM.getById(sorted[i - 1]).nextElementSibling : container.firstElementChild);
+
+                        }
+
+                        while (tmp = snippets[sorted[i]].content.firstChild) {
+                            snippets[sorted[i]].elem.appendChild(tmp);
+
+                        }
+                    } else {
+                        container.insertBefore(snippets[sorted[i]].content, DOM.getById(sorted[i - 1]).nextElementSibling);
+
+                    }
+                }
+            }
+
+            while (n < sorted.length) {
+                container.appendChild(snippets[sorted[n]].content);
+                n++;
+
+            }
+        },
+
+        _getSnippetMap: function (snippets) {
+            var map = {};
+
+            snippets.forEach(function (snippet) {
+                map[snippet.id] = snippet;
+            });
+
+            return map;
+
+        },
+
+        _applySort: function (sortData) {
+            var sorted = [],
+                id;
+
+            for (id in sortData.snippets) {
+                sorted.push({ id: id, values: sortData.snippets[id] });
+
+            }
+
+            sorted.sort(this._compareDynamic.bind(this, sortData.descriptor));
+            return sorted.map(function(snippet) { return snippet.id; });
+
+        },
+
+        _compareDynamic: function (descriptor, a, b) {
+            var i, n, v;
+
+            for (i = 0, n = descriptor.length; i < n; i++) {
+                v = a.values[i] < b.values[i] ? -1 : (a.values[i] > b.values[i] ? 1 : 0);
+
+                if (v !== 0) {
+                    return v * (descriptor[i].asc ? 1 : -1);
+
+                }
+            }
+
+            return 0;
+
+        },
+
+        _getSortData: function (container, elem, teardown) {
+            var sortData = container.sortCache;
+
+            if (!sortData) {
+                sortData = this._buildSortData(container, elem, teardown);
+
+                if (container.sortCache !== false) {
+                    container.sortCache = sortData;
+
+                }
+            } else {
+                for (var id in sortData.snippets) {
+                    if (id in teardown && teardown[id]) {
+                        delete sortData.snippets[id];
+
+                    }
+                }
+            }
+
+            return sortData;
+
+        },
+
+        _buildSortData: function (container, elem, teardown) {
+            var sortData = {
+                descriptor: container.sort.trim().split(/\s*,\s*/g).map(this._parseDescriptor.bind(this, container.id)),
+                snippets: {}
+            };
+
+            this._mergeSortData(sortData, DOM.getChildren(elem), teardown);
+
+            return sortData;
+
+        },
+
+        _mergeSortData: function (sortData, snippets, teardown) {
+            snippets.forEach(function (snippet) {
+                var id = snippet.id;
+
+                if (!teardown || !(id in teardown) || !teardown[id]) {
+                    sortData.snippets[id] = this._extractSortData(snippet, sortData.descriptor);
+
+                }
+            }.bind(this));
+        },
+
+        _extractSortData: function (snippet, descriptor) {
+            return descriptor.map(function (field) {
+                return field.extractor(snippet);
+
+            });
+        },
+
+        _parseDescriptor: function (id, descriptor) {
+            var m = descriptor.match(/^(.+?)(?:\[(.+?)\])?(?:\((.+?)\))?(?:\s+(.+?))?$/),
+                sel, attr, prop, asc;
+
+            if (!m) {
+                throw new Error('Invalid sort descriptor: ' + descriptor);
+
+            }
+
+            sel = m[1];
+            attr = m[2];
+            prop = m[3];
+            asc = m[4];
+
+            if (sel.match(/^[^.]|[\s#\[>+:]/)) {
+                throw new TypeError('Invalid selector for sorted insert mode in container #' + id);
+
+            }
+
+            sel = sel.substr(1);
+            asc = asc ? /^[1tay]/i.test(asc) : true;
+
+            if (attr) {
+                return {extractor: this._getAttrExtractor(sel, attr), asc: asc};
+
+            } else if (prop) {
+                return {extractor: this._getDataExtractor(sel, prop), asc: asc};
+
+            } else {
+                return {extractor: this._getTextExtractor(sel), asc: asc};
+
+            }
+        },
+
+        _getAttrExtractor: function (sel, attr) {
+            return function (elem) {
+                elem = elem.getElementsByClassName(sel);
+                return elem.length ? elem[0].getAttribute(attr) || null : null;
+            };
+        },
+
+        _getDataExtractor: function (sel, prop) {
+            return function (elem) {
+                elem = elem.getElementsByClassName(sel);
+                return elem.length ? DOM.getData(elem[0], prop) : null;
+            };
+        },
+
+        _getTextExtractor: function (sel) {
+            return function (elem) {
+                elem = elem.getElementsByClassName(sel);
+                return elem.length ? elem[0].textContent : null;
+            };
+        },
+
+        _teardown: function (snippets) {
+            this._setSnippetsState(snippets, Snippet.PREPARE_TEARDOWN);
+            this._setSnippetsState(snippets, Snippet.RUN_TEARDOWN);
+            this._setSnippetsState(snippets, Snippet.INACTIVE);
+
+            this.trigger('teardown');
+
+            for (var id in snippets) {
+                if (snippets.hasOwnProperty(id) && snippets[id]) {
+                    delete this._.snippets[id];
+
+                }
+            }
+        },
+
+        _setup: function () {
+            this.trigger('setup');
+
+            this._setSnippetsState(this._.snippets, Snippet.PREPARE_SETUP);
+            this._setSnippetsState(this._.snippets, Snippet.RUN_SETUP);
+
+        },
+
+        _setSnippetsState: function (snippets, state) {
+            this._.currentPhase = state;
+
+            for (var id in snippets) {
+                if (snippets.hasOwnProperty(id)) {
+                    this.getSnippet(id).setState(state);
+
+                }
+            }
+        },
+
+        _cleanupChildSnippets: function (elem, teardown) {
+            for (var i in this._.snippets) {
+                if (this._.snippets.hasOwnProperty(i) && this._.snippets[i].getState() === Snippet.RUN_SETUP && this._.snippets[i].getElement() !== elem && DOM.contains(elem, this._.snippets[i].getElement())) {
+                    teardown[i] = true;
+
+                }
+            }
+        },
+
+        _cleanupForms: function (snippet) {
+            if (!this._.formLocator) {
+                return;
+
+            }
+
+            if (snippet.tagName.toLowerCase() === 'form') {
+                this._.formLocator.removeForm(snippet);
+
+            } else {
+                var forms = snippet.getElementsByTagName('form'),
+                    i;
+
+                for (i = 0; i < forms.length; i++) {
+                    this._.formLocator.removeForm(forms.item(i));
+
+                }
+            }
+        }
+    };
+
+    _context.register(SnippetHelpers, 'SnippetHelpers');
+
+}, {
+    DOM: 'Utils.DOM'
+});
+;
+_context.invoke('Nittro.Page', function (DOM, Arrays) {
 
     var Transitions = _context.extend(function(duration) {
         this._ = {
@@ -4287,10 +4813,11 @@ _context.invoke('Nittro.Page', function (DOM) {
     _context.register(Transitions, 'Transitions');
 
 }, {
-    DOM: 'Utils.DOM'
+    DOM: 'Utils.DOM',
+    Arrays: 'Utils.Arrays'
 });
 ;
-_context.invoke('Nittro.Page', function (DOM, Arrays, Url, Snippet) {
+_context.invoke('Nittro.Page', function (DOM, Arrays, Url, SnippetHelpers, Snippet) {
 
     var Service = _context.extend('Nittro.Object', function (ajax, transitions, flashMessages, options) {
         Service.Super.call(this);
@@ -4298,11 +4825,12 @@ _context.invoke('Nittro.Page', function (DOM, Arrays, Url, Snippet) {
         this._.ajax = ajax;
         this._.transitions = transitions;
         this._.flashMessages = flashMessages;
-        this._.snippets = {};
         this._.request = null;
+        this._.snippets = {};
+        this._.containerCache = null;
+        this._.currentPhase = Snippet.INACTIVE;
         this._.transitioning = null;
         this._.setup = false;
-        this._.currentPhase = Snippet.INACTIVE;
         this._.currentUrl = Url.fromCurrent();
         this._.options = Arrays.mergeTree({}, Service.defaults, options);
 
@@ -4350,6 +4878,21 @@ _context.invoke('Nittro.Page', function (DOM, Arrays, Url, Snippet) {
                     frm.reset();
 
                 });
+        },
+
+        getSnippet: function (id) {
+            if (!this._.snippets[id]) {
+                this._.snippets[id] = new Snippet(id, this._.currentPhase);
+
+            }
+
+            return this._.snippets[id];
+
+        },
+
+        isSnippet: function (elem) {
+            return (typeof elem === 'string' ? elem : elem.id) in this._.snippets;
+
         },
 
         _checkFormLocator: function (need) {
@@ -4511,28 +5054,80 @@ _context.invoke('Nittro.Page', function (DOM, Arrays, Url, Snippet) {
 
             var xhr = this._.ajax.dispatch(request); // may throw exception
 
-            var transitionTargets,
-                removeTarget = null,
-                transition = null;
+            var transitionElms,
+                removeElms,
+                transition;
 
             if (elem) {
-                transitionTargets = this._getTransitionTargets(elem);
-                removeTarget = this._getRemoveTarget(elem);
+                transitionElms = this._getTransitionTargets(elem);
+                removeElms = this._getRemoveTargets(elem);
 
-                if (removeTarget) {
-                    DOM.addClass(removeTarget, 'transition-remove');
-                    transitionTargets.push(removeTarget);
+                if (removeElms.length) {
+                    DOM.addClass(removeElms, 'dynamic-remove');
 
                 }
 
-                transition = this._.transitions.transitionOut(transitionTargets);
-                this._.transitioning = transitionTargets;
+                this._.transitioning = transitionElms.concat(removeElms);
+                transition = this._.transitions.transitionOut(this._.transitioning.slice());
+
+            } else {
+                transitionElms = [];
+                removeElms = [];
+                transition = null;
 
             }
 
-            var p = Promise.all([xhr, transition, removeTarget, pushState || false]);
+            var p = Promise.all([xhr, transitionElms, removeElms, pushState || false, transition]);
             p.then(this._handleResponse.bind(this), this._handleError.bind(this));
             return p;
+
+        },
+
+        _handleResponse: function (queue) {
+            if (!this._.request) {
+                this._cleanup();
+                return null;
+
+            }
+
+            var response = queue[0],
+                transitionElms = queue[1] || this._.transitioning || [],
+                removeElms = queue[2],
+                pushState = queue[3],
+                payload = response.getPayload();
+
+            if (typeof payload !== 'object' || !payload) {
+                this._cleanup();
+                return null;
+
+            }
+
+            this._showFlashes(payload.flashes);
+
+            if (this._tryRedirect(payload, pushState)) {
+                return payload;
+
+            } else if (pushState) {
+                this._pushState(payload, this._.request.getUrl());
+
+            }
+
+            this._.request = this._.transitioning = null;
+
+            var dynamic = this._applySnippets(payload.snippets || {}, removeElms);
+            DOM.toggleClass(dynamic, 'transition-middle', true);
+
+            this._showHtmlFlashes();
+
+            this.trigger('update', payload);
+
+            this._.transitions.transitionIn(transitionElms.concat(dynamic))
+                .then(function () {
+                    DOM.removeClass(dynamic, 'dynamic-add dynamic-update');
+
+                });
+
+            return payload;
 
         },
 
@@ -4541,38 +5136,8 @@ _context.invoke('Nittro.Page', function (DOM, Arrays, Url, Snippet) {
 
         },
 
-        _handleResponse: function (queue) {
-            if (!this._.request) {
-                this._cleanup();
-                return;
-
-            }
-
-            var response = queue[0],
-                transitionTargets = queue[1] || this._.transitioning || [],
-                removeTarget = queue[2],
-                pushState = queue[3],
-                payload = response.getPayload(),
-                data,
-                setup = {},
-                teardown = {},
-                dynamic = {},
-                id;
-
-            if (typeof payload !== 'object' || !payload) {
-                this._cleanup();
-                return;
-
-            }
-
-            data = payload && 'snippets' in payload ? payload.snippets : {};
-
-            if (payload && 'flashes' in payload) {
-                this._showFlashes(payload.flashes);
-
-            }
-
-            if (payload && 'redirect' in payload) {
+        _tryRedirect: function (payload, pushState) {
+            if ('redirect' in payload) {
                 if (this._checkRedirect(payload)) {
                     this._dispatchRequest(this._.ajax.createRequest(payload.redirect), null, pushState);
 
@@ -4581,53 +5146,9 @@ _context.invoke('Nittro.Page', function (DOM, Arrays, Url, Snippet) {
 
                 }
 
-                return;
-
-            } else if (pushState) {
-                this._pushState(payload || {}, this._.request.getUrl());
+                return true;
 
             }
-
-            this._.request = this._.transitioning = null;
-
-            if (removeTarget) {
-                this._cleanupChildSnippets(removeTarget, teardown);
-                this._cleanupForms(removeTarget);
-
-                if (this.isSnippet(removeTarget)) {
-                    teardown[removeTarget.id] = true;
-
-                }
-            }
-
-            for (id in data) {
-                if (data.hasOwnProperty(id)) {
-                    this._prepareSnippet(id, setup, teardown, dynamic);
-
-                }
-            }
-
-            this._teardown(teardown);
-
-            if (removeTarget) {
-                transitionTargets.splice(transitionTargets.indexOf(removeTarget), 1);
-                removeTarget.parentNode.removeChild(removeTarget);
-                removeTarget = null;
-
-            }
-
-            this._setupDynamic(dynamic, data, setup, transitionTargets);
-            this._setup(setup, data);
-            this._showHtmlFlashes();
-
-            this.trigger('update', payload);
-
-            this._.transitions.transitionIn(transitionTargets)
-                .then(function () {
-                    this._cleanupDynamic(dynamic);
-
-                }.bind(this));
-
         },
 
         _cleanup: function () {
@@ -4641,6 +5162,11 @@ _context.invoke('Nittro.Page', function (DOM, Arrays, Url, Snippet) {
         },
 
         _showFlashes: function (flashes) {
+            if (!flashes) {
+                return;
+
+            }
+
             var id, i;
 
             for (id in flashes) {
@@ -4665,373 +5191,19 @@ _context.invoke('Nittro.Page', function (DOM, Arrays, Url, Snippet) {
             }
         },
 
-        _handleError: function (err) {
+        _handleError: function (evt) {
             this._cleanup();
-            this.trigger('error', err);
+            this.trigger('error', evt);
 
         },
 
         _showError: function (evt) {
             this._.flashMessages.add(null, 'error', 'There was an error processing your request. Please try again later.');
 
-        },
-
-        getSnippet: function (id) {
-            if (!this._.snippets[id]) {
-                this._.snippets[id] = new Snippet(id, this._.currentPhase);
-
-            }
-
-            return this._.snippets[id];
-
-        },
-
-        isSnippet: function (elem) {
-            return (typeof elem === 'string' ? elem : elem.id) in this._.snippets;
-
-        },
-
-        _prepareSnippet: function (id, setup, teardown, dynamic) {
-            if (this._.snippets[id] && this._.snippets[id].getState() === Snippet.RUN_SETUP) {
-                teardown[id] = false;
-
-            }
-
-            var snippet = DOM.getById(id);
-
-            if (snippet) {
-                this._cleanupChildSnippets(snippet, teardown);
-                this._cleanupForms(snippet);
-                setup[id] = true;
-
-            } else {
-                dynamic[id] = true;
-
-            }
-        },
-
-        _cleanupChildSnippets: function (elem, teardown) {
-            for (var i in this._.snippets) {
-                if (this._.snippets.hasOwnProperty(i) && this._.snippets[i].getState() === Snippet.RUN_SETUP && this._.snippets[i].getElement() !== elem && DOM.contains(elem, this._.snippets[i].getElement())) {
-                    teardown[i] = true;
-
-                }
-            }
-        },
-
-        _cleanupForms: function (snippet) {
-            if (!this._checkFormLocator()) {
-                return;
-
-            }
-
-            if (snippet.tagName.toLowerCase() === 'form') {
-                this._.formLocator.removeForm(snippet);
-
-            } else {
-                var forms = snippet.getElementsByTagName('form'),
-                    i;
-
-                for (i = 0; i < forms.length; i++) {
-                    this._.formLocator.removeForm(forms.item(i));
-
-                }
-            }
-        },
-
-        _teardown: function (snippets) {
-            this._setSnippetsState(snippets, Snippet.PREPARE_TEARDOWN);
-            this._setSnippetsState(snippets, Snippet.RUN_TEARDOWN);
-            this._setSnippetsState(snippets, Snippet.INACTIVE);
-
-            this.trigger('teardown');
-
-            for (var id in snippets) {
-                if (snippets.hasOwnProperty(id) && snippets[id]) {
-                    delete this._.snippets[id];
-
-                }
-            }
-        },
-
-        _setup: function (snippets, data) {
-            if (data) {
-                for (var id in snippets) {
-                    if (snippets.hasOwnProperty(id) && snippets[id]) {
-                        DOM.html(id, data[id] || '');
-
-                    }
-                }
-            }
-
-            this.trigger('setup');
-
-            this._setSnippetsState(this._.snippets, Snippet.PREPARE_SETUP);
-            this._setSnippetsState(this._.snippets, Snippet.RUN_SETUP);
-
-        },
-
-        _setupDynamic: function (snippets, data, setup, transitionTargets) {
-            var id, snippet;
-
-            for (id in snippets) {
-                if (snippets.hasOwnProperty(id)) {
-                    if (snippet = this._prepareDynamic(id, data[id])) {
-                        transitionTargets.push(snippet);
-                        setup[id] = false;
-
-                    }
-                }
-            }
-        },
-
-        _cleanupDynamic: function (snippets) {
-            for (var id in snippets) {
-                if (snippets.hasOwnProperty(id)) {
-                    DOM.removeClass(DOM.getById(id), 'transition-add');
-
-                }
-            }
-        },
-
-        _setSnippetsState: function (snippets, state) {
-            this._.currentPhase = state;
-
-            for (var id in snippets) {
-                if (snippets.hasOwnProperty(id)) {
-                    this.getSnippet(id).setState(state);
-
-                }
-            }
-        },
-
-        _prepareDynamic: function (id, data) {
-            var container = null;
-
-            DOM.getByClassName('snippet-container').some(function (elem) {
-                var pattern = new RegExp('^' + DOM.getData(elem, 'dynamicMask') + '$');
-
-                if (pattern.test(id)) {
-                    container = elem;
-                    return true;
-
-                }
-            });
-
-            if (!container) {
-                return null;
-
-            }
-
-            var elem = (DOM.getData(container, 'dynamicElement') || 'div').split(/\./g),
-                insertMode = DOM.getData(container, 'dynamicInsertMode') || 'append';
-
-            elem[0] = DOM.create(elem[0], {
-                id: id,
-                'class': 'transition-add'
-            });
-
-            if (elem.length > 1) {
-                DOM.addClass.apply(null, elem);
-
-            }
-
-            elem = elem[0];
-            DOM.html(elem, data);
-
-            switch (insertMode) {
-                case 'append':
-                    container.appendChild(elem);
-                    break;
-
-                case 'prepend':
-                    if (container.hasChildNodes()) {
-                        container.insertBefore(elem, container.firstChild);
-
-                    } else {
-                        container.appendChild(elem);
-
-                    }
-                    break;
-
-                default:
-                    if (insertMode.match(/^sorted:/i)) {
-                        this._insertSortedSnippet(container, elem, insertMode.substr(7));
-
-                    } else {
-                        throw new TypeError('Invalid insert mode for dynamic snippet container ' + container.getAttribute('id'));
-
-                    }
-                    break;
-            }
-
-            return elem;
-
-        },
-
-        _insertSortedSnippet: function(container, snippet, descriptor) {
-            var search = [], children = DOM.getChildren(container),
-                x, d, s, a, o, e, val, i, c = 0, n = children.length, f;
-
-            if (!n) {
-                container.appendChild(snippet);
-                return;
-
-            }
-
-            val = function(e, s, a, d) {
-                var n = e.getElementsByClassName(s);
-
-                if (!n.length) {
-                    return null;
-
-                } else if (a) {
-                    return n[0].getAttribute(a);
-
-                } else if (d) {
-                    return DOM.getData(n[0], d);
-
-                } else {
-                    return n[0].textContent;
-
-                }
-            };
-
-            descriptor = descriptor.trim().split(/\s*;\s*/);
-
-            while (descriptor.length) {
-                x = descriptor.shift();
-
-                if (s = x.match(/^(.+?)(?:\[(.+?)\])?(?:<(.+?)>)?(?:\s+(.+?))?$/i)) {
-                    o = s[4] || null;
-                    d = s[3] || null;
-                    a = s[2] || null;
-                    s = s[1];
-
-                    if (s.match(/^[^.]|[\s#\[>+:]/)) {
-                        throw new TypeError('Invalid selector for sorted insert mode in container #' + container.getAttribute('id'));
-
-                    }
-
-                    search.push({
-                        sel: s.substr(1),
-                        attr: a,
-                        data: d,
-                        asc: o ? o.match(/^[1tay]/i) : true,
-                        value: val(snippet, s.substr(1), a, d)
-                    });
-                }
-            }
-
-            for (s = 0; s < search.length; s++) {
-                x = search[s];
-                f = false;
-
-                for (i = c; i < n; i++) {
-                    e = children[i];
-                    d = val(e, x.sel, x.attr, x.data);
-
-                    if (x.asc) {
-                        if (x.value > d) {
-                            c = i;
-
-                        } else if (x.value < d) {
-                            n = i;
-                            break;
-
-                        } else if (!f) {
-                            c = i;
-                            f = true;
-
-                        }
-                    } else {
-                        if (x.value < d) {
-                            c = i;
-
-                        } else if (x.value > d) {
-                            n = i;
-                            break;
-
-                        } else if (!f) {
-                            c = i;
-                            f = true;
-
-                        }
-                    }
-                }
-
-                if (n === c) {
-                    container.insertBefore(snippet, children[n]);
-                    return;
-
-                } else if (n === c + 1 && !f) {
-                    if (c >= children.length - 1) {
-                        container.appendChild(snippet);
-
-                    } else {
-                        container.insertBefore(snippet, children[c + 1]);
-
-                    }
-                    return;
-
-                }
-            }
-
-            if (x.asc) {
-                if (n >= children.length) {
-                    container.appendChild(snippet);
-
-                } else {
-                    container.insertBefore(snippet, children[n]);
-
-                }
-            } else {
-                container.insertBefore(snippet, children[c]);
-
-            }
-        },
-
-        _getTransitionTargets: function (elem) {
-            var sel = DOM.getData(elem, 'transition') || this._.options.defaultTransition,
-                elms = [];
-
-            if (!sel) {
-                return elms;
-
-            }
-
-            if (typeof sel === 'string') {
-                sel = sel.trim().split(/\s*,\s*/g);
-
-            }
-
-            sel.forEach(function (sel) {
-                if (sel.match(/^[^.#]|[\s\[>+:]/)) {
-                    throw new TypeError('Invalid transition selector, only single-level .class and #id are allowed');
-
-                }
-
-                if (sel.charAt(0) === '#') {
-                    sel = DOM.getById(sel.substr(1));
-                    sel && elms.push(sel);
-
-                } else {
-                    var matching = DOM.getByClassName(sel.substr(1));
-                    elms.push.apply(elms, matching);
-
-                }
-            });
-
-            return elms;
-
-        },
-
-        _getRemoveTarget: function (elem) {
-            var id = DOM.getData(elem, 'dynamicRemove');
-            return id ? DOM.getById(id) : null;
-
         }
     });
+
+    _context.mixin(Service, SnippetHelpers);
 
     _context.register(Service, 'Service');
 
@@ -7469,37 +7641,16 @@ _context.invoke('Nittro.Application.Routing', function (Nittro, DOM) {
 
     var DOMRoute = _context.extend(Nittro.Object, function (selector) {
         DOMRoute.Super.call(this);
-        this._.selector = this._prepareSelector(selector);
+        this._.selector = selector;
 
     }, {
         match: function () {
-            var matches;
-
-            if (this._.selector.type === 'id') {
-                var elem = DOM.getById(this._.selector.value);
-                matches = elem ? [elem] : [];
-
-            } else {
-                matches = DOM.getByClassName(this._.selector.value);
-
-            }
+            var matches = DOM.find(this._.selector);
 
             if (matches.length) {
                 this.trigger('match', matches);
 
             }
-        },
-
-        _prepareSelector: function (selector) {
-            if (selector.match(/^[^.#]|[\s>\[:+]/)) {
-                throw new Error('Invalid selector');
-
-            }
-
-            return {
-                type: selector.charAt(0) === '#' ? 'id' : 'class',
-                value: selector.substr(1)
-            };
         }
     });
 
