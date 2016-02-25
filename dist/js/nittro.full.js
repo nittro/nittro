@@ -2552,7 +2552,7 @@ _context.invoke('Utils', function (Arrays, Strings, undefined) {
     };
 
     var getElem = function (elem) {
-        Arrays.isArrayLike(elem) && (elem = elem[0]);
+        Arrays.isArrayLike(elem) && elem !== window && (elem = elem[0]);
         return typeof elem === 'string' ? DOM.getById(elem) : elem;
 
     };
@@ -7662,10 +7662,11 @@ _context.invoke('Nittro.Application.Routing', function (Nittro, DOM) {
 ;
 _context.invoke('Nittro.Application.Routing', function (Nittro, DOMRoute, URLRoute, Url) {
 
-    var Router = _context.extend(Nittro.Object, function (page) {
+    var Router = _context.extend(Nittro.Object, function (page, basePath) {
         Router.Super.call(this);
 
         this._.page = page;
+        this._.basePath = '/' + basePath.replace(/^\/|\/$/g, '');
         this._.routes = {
             dom: {},
             url: {}
@@ -7697,9 +7698,13 @@ _context.invoke('Nittro.Application.Routing', function (Nittro, DOMRoute, URLRou
         _matchAll: function () {
             var k, url = Url.fromCurrent();
 
-            for (k in this._.routes.url) {
-                this._.routes.url[k].match(url);
+            if (url.getPath().substr(0, this._.basePath.length) === this._.basePath) {
+                url.setPath(url.getPath().substr(this._.basePath.length));
 
+                for (k in this._.routes.url) {
+                    this._.routes.url[k].match(url);
+
+                }
             }
 
             for (k in this._.routes.dom) {
@@ -8156,23 +8161,35 @@ _context.invoke('Nittro.Widgets', function(Dialog, Form, DOM, Arrays) {
     Arrays: 'Utils.Arrays'
 });
 ;
-_context.invoke(function(Nittro) {
+_context.invoke(function(Nittro, DOM, Arrays) {
+
+    var params = DOM.getById('nittro-params'),
+        defaults = {
+            basePath: '',
+            page: {
+                whitelistLinks: false,
+                whitelistForms: false,
+                defaultTransition: '.transition-auto'
+            },
+            flashes: {
+                layer: document.body
+            }
+        };
+
+    if (params && params.nodeName.toLowerCase() === 'script' && params.type === 'application/json') {
+        params = Arrays.mergeTree(defaults, JSON.parse(params.textContent.trim()));
+
+    } else {
+        params = defaults;
+
+    }
 
     Nittro.Widgets.Dialog.setDefaults({
         layer: document.body
     });
 
     var di = new Nittro.DI.Context({
-        params: {
-            flashes: {
-                layer: document.body
-            },
-            page: {
-                whitelistLinks: false,
-                whitelistForms: false,
-                defaultTransition: '.transition-fade, .transition-slide'
-            }
-        },
+        params: params,
         services: {
             'persistentStorage': 'Nittro.Application.Storage(null, true)',
             'sessionStorage': 'Nittro.Application.Storage(null, false)',
@@ -8183,7 +8200,7 @@ _context.invoke(function(Nittro) {
                     '::addTransport(Nittro.Ajax.Transport.Native())'
                 ]
             },
-            'router': 'Nittro.Application.Routing.Router(@page)!',
+            'router': 'Nittro.Application.Routing.Router(basePath: %basePath%)!',
             'page': {
                 factory: 'Nittro.Page.Service(options: %page%)',
                 run: true,
@@ -8203,8 +8220,10 @@ _context.invoke(function(Nittro) {
     this.di = di;
     di.runServices();
 
+}, {
+    DOM: 'Utils.DOM',
+    Arrays: 'Utils.Arrays'
 });
-
 ;
 window._stack || (window._stack = []);
 

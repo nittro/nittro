@@ -1,20 +1,32 @@
-_context.invoke(function(Nittro) {
+_context.invoke(function(Nittro, DOM, Arrays) {
+
+    var params = DOM.getById('nittro-params'),
+        defaults = {
+            basePath: '',
+            page: {
+                whitelistLinks: false,
+                whitelistForms: false,
+                defaultTransition: '.transition-auto'
+            },
+            flashes: {
+                layer: document.body
+            }
+        };
+
+    if (params && params.nodeName.toLowerCase() === 'script' && params.type === 'application/json') {
+        params = Arrays.mergeTree(defaults, JSON.parse(params.textContent.trim()));
+
+    } else {
+        params = defaults;
+
+    }
 
     Nittro.Widgets.Dialog.setDefaults({
         layer: document.body
     });
 
     var di = new Nittro.DI.Context({
-        params: {
-            flashes: {
-                layer: document.body
-            },
-            page: {
-                whitelistLinks: false,
-                whitelistForms: false,
-                defaultTransition: '.transition-auto'
-            }
-        },
+        params: params,
         services: {
             'persistentStorage': 'Nittro.Application.Storage(null, true)',
             'sessionStorage': 'Nittro.Application.Storage(null, false)',
@@ -25,7 +37,7 @@ _context.invoke(function(Nittro) {
                     '::addTransport(Nittro.Ajax.Transport.Native())'
                 ]
             },
-            'router': 'Nittro.Application.Routing.Router()!',
+            'router': 'Nittro.Application.Routing.Router(basePath: %basePath%)!',
             'page': {
                 factory: 'Nittro.Page.Service(options: %page%)',
                 run: true,
@@ -45,5 +57,7 @@ _context.invoke(function(Nittro) {
     this.di = di;
     di.runServices();
 
+}, {
+    DOM: 'Utils.DOM',
+    Arrays: 'Utils.Arrays'
 });
-

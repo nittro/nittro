@@ -1945,7 +1945,7 @@ _context.invoke('Utils', function (Arrays, Strings, undefined) {
     };
 
     var getElem = function (elem) {
-        Arrays.isArrayLike(elem) && (elem = elem[0]);
+        Arrays.isArrayLike(elem) && elem !== window && (elem = elem[0]);
         return typeof elem === 'string' ? DOM.getById(elem) : elem;
 
     };
@@ -7055,10 +7055,11 @@ _context.invoke('Nittro.Application.Routing', function (Nittro, DOM) {
 ;
 _context.invoke('Nittro.Application.Routing', function (Nittro, DOMRoute, URLRoute, Url) {
 
-    var Router = _context.extend(Nittro.Object, function (page) {
+    var Router = _context.extend(Nittro.Object, function (page, basePath) {
         Router.Super.call(this);
 
         this._.page = page;
+        this._.basePath = '/' + basePath.replace(/^\/|\/$/g, '');
         this._.routes = {
             dom: {},
             url: {}
@@ -7090,9 +7091,13 @@ _context.invoke('Nittro.Application.Routing', function (Nittro, DOMRoute, URLRou
         _matchAll: function () {
             var k, url = Url.fromCurrent();
 
-            for (k in this._.routes.url) {
-                this._.routes.url[k].match(url);
+            if (url.getPath().substr(0, this._.basePath.length) === this._.basePath) {
+                url.setPath(url.getPath().substr(this._.basePath.length));
 
+                for (k in this._.routes.url) {
+                    this._.routes.url[k].match(url);
+
+                }
             }
 
             for (k in this._.routes.dom) {
