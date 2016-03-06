@@ -3309,7 +3309,7 @@ _context.invoke('Nittro.Ajax.Transport', function (Response, FormData, Url) {
                 }
             });
 
-            if (headers['content-type'] === 'application/json') {
+            if (headers['content-type'] && headers['content-type'].split(/;/)[0] === 'application/json') {
                 payload = JSON.parse(xhr.responseText || '{}');
 
             } else {
