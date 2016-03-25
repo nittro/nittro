@@ -6,7 +6,8 @@ module.exports = function (grunt) {
         'bower_components/nittro-application/dist/js/nittro-application.js',
         'src/js/Nittro/Widgets/Dialog.js',
         'src/js/Nittro/Widgets/Confirm.js',
-        'src/js/Nittro/Widgets/FormDialog.js'
+        'src/js/Nittro/Widgets/FormDialog.js',
+        'src/js/Nittro/Widgets/Paginator.js'
     ];
 
     grunt.initConfig({
