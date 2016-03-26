@@ -4328,8 +4328,13 @@ _context.invoke('Nittro.Page', function (DOM, Arrays, Url, SnippetHelpers, Snipp
 
             }
 
+            if (payload.title) {
+                document.title = payload.title;
+                
+            }
+
             this._.currentUrl = Url.from(url);
-            window.history.pushState(null, payload.title || document.title, this._.currentUrl.toAbsolute());
+            window.history.pushState(null, document.title, this._.currentUrl.toAbsolute());
 
         },
 
