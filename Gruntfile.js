@@ -1,9 +1,12 @@
 module.exports = function (grunt) {
 
-    var Nittro = [
+    var dependencies = [
         'bower_components/nittro-core/dist/js/nittro-core.js',
         'bower_components/nittro-page/dist/js/nittro-page.js',
-        'bower_components/nittro-application/dist/js/nittro-application.js',
+        'bower_components/nittro-application/dist/js/nittro-application.js'
+    ];
+
+    var Nittro = [
         'src/js/Nittro/Widgets/Dialog.js',
         'src/js/Nittro/Widgets/Confirm.js',
         'src/js/Nittro/Widgets/FormDialog.js',
@@ -30,11 +33,13 @@ module.exports = function (grunt) {
             },
             nittro: {
                 files: {
-                    'dist/js/nittro.core.min.js': Nittro,
+                    'dist/js/nittro.min.js': Nittro,
+                    'dist/js/nittro.core.min.js': dependencies.concat(Nittro),
                     'dist/js/nittro.full.min.js': [
                         'bower_components/promiz/promiz.min.js',
                         'dist/js/netteForms.js'
                     ].concat(
+                        dependencies,
                         Nittro,
                         'src/js/bootstrap.js',
                         'bower_components/nittro-core/src/js/stack.js'
@@ -54,13 +59,15 @@ module.exports = function (grunt) {
             options: {
                 separator: ";\n"
             },
-            nettejs: {
+            nittro: {
                 files: {
-                    'dist/js/nittro.core.js': Nittro,
+                    'dist/js/nittro.js': Nittro,
+                    'dist/js/nittro.core.js': dependencies.concat(Nittro),
                     'dist/js/nittro.full.js': [
                         'bower_components/promiz/promiz.min.js',
                         'dist/js/netteForms.js'
                     ].concat(
+                        dependencies,
                         Nittro,
                         'src/js/bootstrap.js',
                         'bower_components/nittro-core/src/js/stack.js'
@@ -75,6 +82,9 @@ module.exports = function (grunt) {
                     compress: true
                 },
                 files: {
+                    'dist/css/nittro.min.css': [
+                        'src/css/dialogs.less'
+                    ],
                     'dist/css/nittro.core.min.css': [
                         'src/css/dialogs.less',
                         'bower_components/nittro-page/src/css/flashes.less'
@@ -91,6 +101,9 @@ module.exports = function (grunt) {
                     compress: false
                 },
                 files: {
+                    'dist/css/nittro.css': [
+                        'src/css/dialogs.less'
+                    ],
                     'dist/css/nittro.core.css': [
                         'src/css/dialogs.less',
                         'bower_components/nittro-page/src/css/flashes.less'
