@@ -3523,7 +3523,13 @@ _context.invoke('Nittro.Page', function (Snippet, DOM) {
 
     var SnippetHelpers = {
         _getTransitionTargets: function (elem) {
-            var sel = DOM.getData(elem, 'transition') || this._.options.defaultTransition;
+            var sel = DOM.getData(elem, 'transition');
+
+            if (sel === null && !DOM.getData(elem, 'dynamic-remove')) {
+                sel = this._.options.defaultTransition;
+
+            }
+
             return sel ? DOM.find(sel) : [];
 
         },
@@ -3707,7 +3713,7 @@ _context.invoke('Nittro.Page', function (Snippet, DOM) {
 
         _createDynamic: function (elem, id, html) {
             elem = elem.split(/\./g);
-            elem[0] = DOM.create(elem, { id: id });
+            elem[0] = DOM.create(elem[0], { id: id });
 
             if (elem.length > 1) {
                 DOM.addClass.apply(null, elem);
@@ -4330,7 +4336,7 @@ _context.invoke('Nittro.Page', function (DOM, Arrays, Url, SnippetHelpers, Snipp
 
             if (payload.title) {
                 document.title = payload.title;
-                
+
             }
 
             this._.currentUrl = Url.from(url);
