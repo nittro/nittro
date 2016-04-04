@@ -2277,7 +2277,7 @@ _context.invoke('Utils', function(Strings, undefined) {
     };
 
     Url.prototype.isLocal = function() {
-        return this.compare(Url.fromCurrent()) <= Url.PART.PORT;
+        return this.compare(Url.fromCurrent()) < Url.PART.PORT;
 
     };
 
@@ -4918,7 +4918,7 @@ _context.invoke('Nittro.Page', function (DOM, Arrays, Url, SnippetHelpers, Snipp
             var url = Url.fromCurrent(),
                 request;
 
-            if (url.compare(this._.currentUrl) <= Url.PART.HASH) {
+            if (!this._checkUrl(url)) {
                 return;
 
             }
@@ -4986,17 +4986,9 @@ _context.invoke('Nittro.Page', function (DOM, Arrays, Url, SnippetHelpers, Snipp
 
             }
 
-            var link = DOM.closest(evt.target, 'a'),
-                url;
+            var link = DOM.closest(evt.target, 'a');
 
-            if (!link || !this._checkLink(link)) {
-                return;
-
-            }
-
-            url = Url.from(link.href);
-
-            if (!url.isLocal() || url.compare() === Url.PART.HASH) {
+            if (!link || !this._checkLink(link) || !this._checkUrl(link.href)) {
                 return;
 
             }
@@ -5032,7 +5024,7 @@ _context.invoke('Nittro.Page', function (DOM, Arrays, Url, SnippetHelpers, Snipp
 
             }
 
-            if (!(evt.target instanceof HTMLFormElement) || !this._checkForm(evt.target)) {
+            if (!(evt.target instanceof HTMLFormElement) || !this._checkForm(evt.target) || !this._checkUrl(evt.target.action)) {
                 return;
 
             }
@@ -5044,6 +5036,19 @@ _context.invoke('Nittro.Page', function (DOM, Arrays, Url, SnippetHelpers, Snipp
         _createRequest: function (url, method, data, evt, context) {
             if (this._.request) {
                 this._.request.abort();
+
+            }
+
+            var create = this.trigger('create-request', {
+                url: url,
+                method: method,
+                data: data,
+                context: context
+            });
+
+            if (create.isDefaultPrevented()) {
+                evt && evt.preventDefault();
+                return Promise.reject();
 
             }
 
@@ -5060,7 +5065,7 @@ _context.invoke('Nittro.Page', function (DOM, Arrays, Url, SnippetHelpers, Snipp
             }
         },
 
-        _dispatchRequest: function (request, elem, pushState) {
+        _dispatchRequest: function (request, context, pushState) {
             this._.request = request;
 
             var xhr = this._.ajax.dispatch(request); // may throw exception
@@ -5069,9 +5074,9 @@ _context.invoke('Nittro.Page', function (DOM, Arrays, Url, SnippetHelpers, Snipp
                 removeElms,
                 transition;
 
-            if (elem) {
-                transitionElms = this._getTransitionTargets(elem);
-                removeElms = this._getRemoveTargets(elem);
+            if (context) {
+                transitionElms = this._getTransitionTargets(context);
+                removeElms = this._getRemoveTargets(context);
 
                 if (removeElms.length) {
                     DOM.addClass(removeElms, 'dynamic-remove');
@@ -5141,8 +5146,14 @@ _context.invoke('Nittro.Page', function (DOM, Arrays, Url, SnippetHelpers, Snipp
 
         },
 
+        _checkUrl: function(url) {
+            var d = Url.fromCurrent().compare(url);
+            return d === 0 || d < Url.PART.PORT && d > Url.PART.HASH;
+
+        },
+
         _checkRedirect: function (payload) {
-            return !this._.options.whitelistRedirects !== !payload.allowAjax && Url.from(payload.redirect).isLocal();
+            return !this._.options.whitelistRedirects !== !payload.allowAjax && this._checkUrl(payload.redirect);
 
         },
 
@@ -5208,8 +5219,13 @@ _context.invoke('Nittro.Page', function (DOM, Arrays, Url, SnippetHelpers, Snipp
         },
 
         _showError: function (evt) {
-            this._.flashMessages.add(null, 'error', 'There was an error processing your request. Please try again later.');
+            if (evt.data.type === 'connection') {
+                this._.flashMessages.add(null, 'error', 'There was an error connecting to the server. Please check your internet connection and try again.');
 
+            } else if (evt.data.type !== 'abort') {
+                this._.flashMessages.add(null, 'error', 'There was an error processing your request. Please try again later.');
+
+            }
         }
     });
 
@@ -6835,8 +6851,8 @@ _context.invoke('Nittro.Forms', function (DOM, Arrays, DateTime, FormData, Vendo
                 elem = this._.form.elements.item(i);
 
                 if (!DOM.hasClass(elem, 'no-reset')) {
-                    if (elem.tagName.toLowerCase() === 'select' || elem.type === 'hidden') {
-                        this.setValue(elem, DOM.getData(elem, 'defaultValue') || '');
+                    if (elem.type === 'hidden') {
+                        this.setValue(elem, DOM.getData(elem, 'default-value') || '');
 
                     } else if (elem.type === 'file') {
                         this.setValue(elem, null);
@@ -8085,6 +8101,65 @@ _context.invoke('Nittro.Widgets', function (Dialog, Arrays, ReflectionClass) {
     Arrays: 'Utils.Arrays'
 });
 ;
+_context.invoke('Nittro.Widgets', function (DOM, Arrays, Confirm) {
+
+    var AutoConfirm = _context.extend(function(page, options) {
+        this._ = {
+            page: page,
+            options: Arrays.mergeTree(true, {}, AutoConfirm.defaults, options)
+        };
+
+        this._.page.on('create-request', this._handleRequest.bind(this));
+
+    }, {
+        STATIC: {
+            defaults: {
+                prompt: 'Are you sure?',
+                confirm: 'Yes',
+                cancel: 'No'
+            }
+        },
+
+        _handleRequest: function (evt) {
+            if (!evt.data.context || !DOM.hasClass(evt.data.context, 'nittro-confirm')) {
+                return;
+
+            } else if (DOM.getData(evt.data.context, 'confirmed')) {
+                DOM.setData(evt.data.context, 'confirmed', null);
+                return;
+
+            }
+
+            evt.preventDefault();
+
+            var prompt = DOM.getData(evt.data.context, 'prompt') || this._.options.prompt,
+                confirm = DOM.getData(evt.data.context, 'confirm') || this._.options.confirm,
+                cancel = DOM.getData(evt.data.context, 'cancel') || this._.options.cancel;
+
+            Confirm(prompt, confirm, cancel).then(function() {
+                DOM.setData(evt.data.context, 'confirmed', true);
+
+                if (evt.data.context instanceof HTMLFormElement) {
+                    this._.page.sendForm(evt.data.context);
+
+                } else {
+                    this._.page.openLink(evt.data.context);
+
+                }
+            }.bind(this), function() {
+                DOM.setData(evt.data.context, 'confirmed', null);
+
+            });
+        }
+    });
+
+    _context.register(AutoConfirm, 'AutoConfirm');
+
+}, {
+    DOM: 'Utils.DOM',
+    Arrays: 'Utils.Arrays'
+});
+;
 _context.invoke('Nittro.Widgets', function(Dialog, Form, DOM, Arrays) {
 
     var FormDialog = _context.extend(Dialog, function(formLocator, options) {
@@ -8397,10 +8472,12 @@ _context.invoke(function(Nittro, DOM, Arrays) {
             },
             'transitions': 'Nittro.Page.Transitions(300)',
             'formLocator': 'Nittro.Forms.Locator()',
-            'flashMessages': 'Nittro.Widgets.FlashMessages(%flashes%)'
+            'flashMessages': 'Nittro.Widgets.FlashMessages(%flashes%)',
+            'autoConfirm': 'Nittro.Widgets.AutoConfirm(options: null)!'
         },
         factories: {
-            formDialog: 'Nittro.Widgets.FormDialog(@formLocator)'
+            formDialog: 'Nittro.Widgets.FormDialog()',
+            paginator: 'Nittro.Widgets.Paginator()'
         }
     });
 

@@ -9,6 +9,7 @@ module.exports = function (grunt) {
     var Nittro = [
         'src/js/Nittro/Widgets/Dialog.js',
         'src/js/Nittro/Widgets/Confirm.js',
+        'src/js/Nittro/Widgets/AutoConfirm.js',
         'src/js/Nittro/Widgets/FormDialog.js',
         'src/js/Nittro/Widgets/Paginator.js'
     ];
@@ -90,7 +91,7 @@ module.exports = function (grunt) {
                         'bower_components/nittro-page/src/css/flashes.less'
                     ],
                     'dist/css/nittro.full.min.css': [
-                        'src/css/nittro-dialog.less',
+                        'src/css/dialogs.less',
                         'bower_components/nittro-page/src/css/flashes.less',
                         'bower_components/nittro-page/src/css/transitions.less'
                     ]
@@ -109,7 +110,7 @@ module.exports = function (grunt) {
                         'bower_components/nittro-page/src/css/flashes.less'
                     ],
                     'dist/css/nittro.full.css': [
-                        'src/css/nittro-dialog.less',
+                        'src/css/dialogs.less',
                         'bower_components/nittro-page/src/css/flashes.less',
                         'bower_components/nittro-page/src/css/transitions.less'
                     ]

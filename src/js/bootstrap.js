@@ -47,10 +47,12 @@ _context.invoke(function(Nittro, DOM, Arrays) {
             },
             'transitions': 'Nittro.Page.Transitions(300)',
             'formLocator': 'Nittro.Forms.Locator()',
-            'flashMessages': 'Nittro.Widgets.FlashMessages(%flashes%)'
+            'flashMessages': 'Nittro.Widgets.FlashMessages(%flashes%)',
+            'autoConfirm': 'Nittro.Widgets.AutoConfirm(options: null)!'
         },
         factories: {
-            formDialog: 'Nittro.Widgets.FormDialog(@formLocator)'
+            formDialog: 'Nittro.Widgets.FormDialog()',
+            paginator: 'Nittro.Widgets.Paginator()'
         }
     });
 
