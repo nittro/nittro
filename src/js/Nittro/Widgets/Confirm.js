@@ -12,6 +12,8 @@ _context.invoke('Nittro.Widgets', function (Dialog, Arrays, ReflectionClass) {
 
 		this._.promise = new Promise(function (fulfill, reject) {
             this.on('button', function(evt) {
+                this.destroy();
+
                 if (evt.data.value === 'confirm') {
                     fulfill();
 
@@ -25,7 +27,7 @@ _context.invoke('Nittro.Widgets', function (Dialog, Arrays, ReflectionClass) {
 	}, {
         STATIC: {
             defaults: {
-                hideOnSuccess: true,
+                classes: 'nittro-dialog-confirm',
                 buttons: {
                     confirm: 'OK',
                     cancel: {label: 'Cancel', type: 'text'}

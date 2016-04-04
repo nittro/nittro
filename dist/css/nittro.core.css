@@ -23,9 +23,10 @@
 .nittro-dialog-holder .nittro-dialog-inner {
   -webkit-flex: 0 0 auto;
   flex: 0 0 auto;
+  min-width: 300px;
   max-height: 100vh;
   margin: 0 auto;
-  padding: 30px;
+  padding: 0;
   overflow-y: auto;
   background: #fff;
   -webkit-transform: translateY(-100%);
@@ -39,8 +40,11 @@
   -o-transition: -o-transform 0.3s ease-out;
   transition: transform 0.3s ease-out;
 }
+.nittro-dialog-holder .nittro-dialog-inner .nittro-dialog-content {
+  padding: 30px 30px 15px;
+}
 .nittro-dialog-holder .nittro-dialog-inner .nittro-dialog-buttons {
-  margin: 10px 0 0;
+  padding: 15px 30px 30px;
   text-align: center;
 }
 .nittro-dialog-holder.visible {

@@ -17,9 +17,9 @@
     ],
     "license": "MIT",
     "dependencies": {
-        "nittro-core": "^1.9.2",
-        "nittro-page": "^1.9.2",
-        "nittro-application": "^1.9.2",
+        "nittro-core": "^1.9.6",
+        "nittro-page": "^1.9.9",
+        "nittro-application": "^1.9.10",
         "nette-forms": "^2.3.7",
         "promiz": "^1.0.6"
     },

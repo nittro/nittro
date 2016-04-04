@@ -2520,7 +2520,7 @@ _context.invoke('Utils', function(Strings, undefined) {
 ;
 _context.invoke('Utils', function (Arrays, Strings, undefined) {
 
-    var map = function (args, callback) {
+    function map(args, callback) {
         args = Arrays.createFrom(args);
 
         if (Arrays.isArray(args[0])) {
@@ -2549,15 +2549,19 @@ _context.invoke('Utils', function (Arrays, Strings, undefined) {
 
             }
         }
-    };
+    }
 
-    var getElem = function (elem) {
-        Arrays.isArrayLike(elem) && elem !== window && (elem = elem[0]);
+    function getElem(elem) {
+        if (Arrays.isArray(elem) || elem instanceof HTMLCollection || elem instanceof NodeList) {
+            elem = elem[0];
+
+        }
+
         return typeof elem === 'string' ? DOM.getById(elem) : elem;
 
-    };
+    }
 
-    var getPrefixed = function (elem, prop) {
+    function getPrefixed(elem, prop) {
         if (Arrays.isArray(elem)) {
             elem = elem[0];
 
@@ -2582,9 +2586,9 @@ _context.invoke('Utils', function (Arrays, Strings, undefined) {
 
         return prop;
 
-    };
+    }
 
-    var parseData = function (value) {
+    function parseData(value) {
         if (!value) return null;
 
         try {
@@ -2594,7 +2598,7 @@ _context.invoke('Utils', function (Arrays, Strings, undefined) {
             return value;
 
         }
-    };
+    }
 
     var DOM = {
         getByClassName: function (className, context) {
@@ -6801,8 +6805,15 @@ _context.invoke('Nittro.Forms', function (DOM, Arrays, DateTime, FormData, Vendo
                 var btn = this._.form.elements.namedItem(by);
 
                 if (btn && btn.type === 'submit') {
+                    try {
+                        evt = new MouseEvent('click', {bubbles: true, cancelable: true, view: window});
+
+                    } catch (e) {
                     evt = document.createEvent('MouseEvents');
                     evt.initMouseEvent('click', true, true, window);
+
+                    }
+
                     btn.dispatchEvent(evt);
                     return this;
 
@@ -6812,8 +6823,15 @@ _context.invoke('Nittro.Forms', function (DOM, Arrays, DateTime, FormData, Vendo
                 }
             }
 
+            try {
+                evt = new Event('submit', {bubbles: true, cancelable: true});
+
+            } catch (e) {
             evt = document.createEvent('HTMLEvents');
             evt.initEvent('submit', true, true);
+
+            }
+
             this._.form.dispatchEvent(evt);
 
             return this;
@@ -7765,6 +7783,11 @@ _context.invoke('Nittro.Widgets', function(DOM, Arrays) {
         this._.elms.holder.appendChild(this._.elms.wrapper);
         this._.elms.wrapper.appendChild(this._.elms.content);
 
+        if (this._.options.classes) {
+            DOM.addClass(this._.elms.holder, this._.options.classes);
+            
+        }
+
         if (this._.options.text) {
             this._.options.html = '<p>' + this._.options.text + '</p>';
 
@@ -7797,6 +7820,7 @@ _context.invoke('Nittro.Widgets', function(DOM, Arrays) {
     }, {
         STATIC: {
             defaults: {
+                classes: null,
                 html: null,
                 text: null,
                 buttons: null,
@@ -7911,7 +7935,11 @@ _context.invoke('Nittro.Widgets', function(DOM, Arrays) {
 
         destroy: function () {
             if (this._.visible) {
-                this.one('hide', this.destroy);
+                window.setTimeout(function() {
+                    this.destroy();
+
+                }.bind(this), 1000);
+
                 this.hide();
 
             } else {
@@ -8027,6 +8055,8 @@ _context.invoke('Nittro.Widgets', function (Dialog, Arrays, ReflectionClass) {
 
 		this._.promise = new Promise(function (fulfill, reject) {
             this.on('button', function(evt) {
+                this.destroy();
+
                 if (evt.data.value === 'confirm') {
                     fulfill();
 
@@ -8040,7 +8070,7 @@ _context.invoke('Nittro.Widgets', function (Dialog, Arrays, ReflectionClass) {
 	}, {
         STATIC: {
             defaults: {
-                hideOnSuccess: true,
+                classes: 'nittro-dialog-confirm',
                 buttons: {
                     confirm: 'OK',
                     cancel: {label: 'Cancel', type: 'text'}
@@ -8175,6 +8205,7 @@ _context.invoke('Nittro.Widgets', function(Dialog, Form, DOM, Arrays) {
     }, {
         STATIC: {
             defaults: {
+                classes: 'nittro-dialog-form',
                 hideOnSuccess: true,
                 buttons: {
                     confirm: 'OK',

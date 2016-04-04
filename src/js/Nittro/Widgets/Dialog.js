@@ -17,6 +17,11 @@ _context.invoke('Nittro.Widgets', function(DOM, Arrays) {
         this._.elms.holder.appendChild(this._.elms.wrapper);
         this._.elms.wrapper.appendChild(this._.elms.content);
 
+        if (this._.options.classes) {
+            DOM.addClass(this._.elms.holder, this._.options.classes);
+            
+        }
+
         if (this._.options.text) {
             this._.options.html = '<p>' + this._.options.text + '</p>';
 
@@ -49,6 +54,7 @@ _context.invoke('Nittro.Widgets', function(DOM, Arrays) {
     }, {
         STATIC: {
             defaults: {
+                classes: null,
                 html: null,
                 text: null,
                 buttons: null,
@@ -163,7 +169,11 @@ _context.invoke('Nittro.Widgets', function(DOM, Arrays) {
 
         destroy: function () {
             if (this._.visible) {
-                this.one('hide', this.destroy);
+                window.setTimeout(function() {
+                    this.destroy();
+
+                }.bind(this), 1000);
+
                 this.hide();
 
             } else {

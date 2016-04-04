@@ -13,6 +13,7 @@ _context.invoke('Nittro.Widgets', function(Dialog, Form, DOM, Arrays) {
     }, {
         STATIC: {
             defaults: {
+                classes: 'nittro-dialog-form',
                 hideOnSuccess: true,
                 buttons: {
                     confirm: 'OK',
