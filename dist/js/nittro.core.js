@@ -1774,7 +1774,7 @@ _context.invoke('Utils', function(Strings, undefined) {
     Url.buildQuery = function(data, pairs) {
         var q = [], n, en = encodeURIComponent;
 
-        var val = function (v) {
+        function val(v) {
             if (v === undefined) {
                 return null;
 
@@ -1785,9 +1785,9 @@ _context.invoke('Utils', function(Strings, undefined) {
                 return en('' + v);
 
             }
-        };
+        }
 
-        var flatten = function(a, n) {
+        function flatten(a, n) {
             var r = [], i;
 
             if (Array.isArray(a)) {
@@ -1807,9 +1807,9 @@ _context.invoke('Utils', function(Strings, undefined) {
                 }
             }
 
-            return r.filter(function(v) { return v !== null }).join('&');
+            return r.length ? r.filter(function(v) { return v !== null }).join('&') : null;
 
-        };
+        }
 
         for (n in data) {
             if (data[n] === null || data[n] === undefined) {
@@ -1955,10 +1955,7 @@ _context.invoke('Utils', function (Arrays, Strings, undefined) {
     }
 
     function getPrefixed(elem, prop) {
-        if (Arrays.isArray(elem)) {
-            elem = elem[0];
-
-        }
+        elem = getElem(elem);
 
         if (prop in elem.style) {
             return prop;
@@ -2125,6 +2122,18 @@ _context.invoke('Utils', function (Arrays, Strings, undefined) {
 
             return map([elem], function (elem) {
                 elem.style[prop] = value;
+
+            });
+        },
+
+        getStyle: function(elem, prop, prefix) {
+            if (prefix !== false) {
+                prop = getPrefixed(elem, prop);
+
+            }
+
+            return map([elem], function(elem) {
+                return window.getComputedStyle(elem)[prop];
 
             });
         },
@@ -4077,8 +4086,7 @@ _context.invoke('Nittro.Page', function (DOM, Arrays) {
             duration: duration || false,
             ready: true,
             queue: [],
-            support: false,
-            property: null
+            support: false
         };
 
         try {
@@ -4091,11 +4099,8 @@ _context.invoke('Nittro.Page', function (DOM, Arrays) {
                 'msTransition',
                 'OTransition'
             ].some(function(prop) {
-                if (prop in s) {
-                    this._.property = prop;
-                    return true;
-                }
-            }.bind(this));
+                return prop in s;
+            });
 
             s = null;
 
@@ -4124,8 +4129,8 @@ _context.invoke('Nittro.Page', function (DOM, Arrays) {
 
         _resolve: function (elements, className) {
             if (!this._.ready) {
-                return new Promise(function (resolve) {
-                    this._.queue.push([elements, className, resolve]);
+                return new Promise(function (fulfill) {
+                    this._.queue.push([elements, className, fulfill]);
 
                 }.bind(this));
             }
@@ -4142,7 +4147,7 @@ _context.invoke('Nittro.Page', function (DOM, Arrays) {
 
             var duration = this._getDuration(elements);
 
-            var promise = new Promise(function (resolve) {
+            var promise = new Promise(function (fulfill) {
                 window.setTimeout(function () {
                     DOM.removeClass(elements, 'transition-active ' + className);
 
@@ -4153,7 +4158,7 @@ _context.invoke('Nittro.Page', function (DOM, Arrays) {
 
                     this._.ready = true;
 
-                    resolve(elements);
+                    fulfill(elements);
 
                 }.bind(this), duration);
             }.bind(this));
@@ -4179,30 +4184,20 @@ _context.invoke('Nittro.Page', function (DOM, Arrays) {
 
             }
 
-            var durations = [],
-                prop = this._.property + 'Duration';
+            var durations = DOM.getStyle(elements, 'animationDuration')
+                .concat(DOM.getStyle(elements, 'transitionDuration'))
+                .map(function(d) {
+                    if (!d) {
+                        return 0;
+                    }
 
-            elements.forEach(function (elem) {
-                var duration = window.getComputedStyle(elem)[prop];
-
-                if (duration) {
-                    duration = (duration + '').trim().split(/\s*,\s*/g).map(function (v) {
+                    return Math.max.apply(null, d.split(/\s*,\s*/g).map(function(v) {
                         v = v.match(/^((?:\d*\.)?\d+)(m?s)$/);
+                        return v ? parseFloat(v[1]) * (v[2] === 'ms' ? 1 : 1000) : 0;
 
-                        if (v) {
-                            return parseFloat(v[1]) * (v[2] === 'ms' ? 1 : 1000);
-
-                        } else {
-                            return 0;
-
-                        }
-                    });
-
-                    durations.push.apply(durations, duration.filter(function(v) { return v > 0; }));
-
-                }
-            });
-
+                    }));
+                });
+            
             if (durations.length) {
                 return Math.max.apply(null, durations);
 
@@ -4311,7 +4306,11 @@ _context.invoke('Nittro.Page', function (DOM, Arrays, Url, SnippetHelpers, Snipp
 
         },
 
-        _handleState: function () {
+        _handleState: function (evt) {
+            if (evt.state === null) {
+                return;
+            }
+
             var url = Url.fromCurrent(),
                 request;
 
@@ -4344,7 +4343,7 @@ _context.invoke('Nittro.Page', function (DOM, Arrays, Url, SnippetHelpers, Snipp
             }
 
             this._.currentUrl = Url.from(url);
-            window.history.pushState(null, document.title, this._.currentUrl.toAbsolute());
+            window.history.pushState({ _nittro: true }, document.title, this._.currentUrl.toAbsolute());
 
         },
 
@@ -4359,6 +4358,7 @@ _context.invoke('Nittro.Page', function (DOM, Arrays, Url, SnippetHelpers, Snipp
                 this._.setup = true;
 
                 window.setTimeout(function () {
+                    window.history.replaceState({ _nittro: true }, document.title, document.location.href);
                     this._setup();
                     this._showHtmlFlashes();
                     this.trigger('update');
@@ -4544,7 +4544,15 @@ _context.invoke('Nittro.Page', function (DOM, Arrays, Url, SnippetHelpers, Snipp
         },
 
         _checkUrl: function(url) {
-            var d = Url.fromCurrent().compare(url);
+            var u = Url.from(url),
+                c = Url.fromCurrent(),
+                d = u.compare(c);
+
+            if (d === Url.PART.HASH && !u.getHash()) {
+                return true;
+
+            }
+
             return d === 0 || d < Url.PART.PORT && d > Url.PART.HASH;
 
         },
@@ -6009,6 +6017,11 @@ _context.invoke('Nittro.Forms', function (DOM, Arrays, DateTime, FormData, Vendo
         getElement: function (name) {
             return name ? this._.form.elements.namedItem(name) : this._.form;
 
+        },
+
+        getElements: function () {
+            return this._.form.elements;
+            
         },
 
         setSubmittedBy: function (value) {
@@ -7595,11 +7608,16 @@ _context.invoke('Nittro.Widgets', function(Dialog, Form, DOM, Arrays) {
         DOM.addListener(this._.elms.form, 'submit', this._handleSubmit.bind(this));
         this.on('button', this._handleButton.bind(this));
 
+        if (this._.options.autoFocus) {
+            this.on('show', this._autoFocus.bind(this));
+
+        }
     }, {
         STATIC: {
             defaults: {
                 classes: 'nittro-dialog-form',
                 hideOnSuccess: true,
+                autoFocus: true,
                 buttons: {
                     confirm: 'OK',
                     cancel: {label: 'Cancel', type: 'text'}
@@ -7653,6 +7671,13 @@ _context.invoke('Nittro.Widgets', function(Dialog, Form, DOM, Arrays) {
                 this._.form.reset();
 
             }
+        },
+
+        _autoFocus: function () {
+            try {
+                this._.form.getElements().item(0).focus();
+
+            } catch (e) { /* noop */ }
         },
 
         destroy: function () {

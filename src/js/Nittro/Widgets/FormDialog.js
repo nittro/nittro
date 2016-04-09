@@ -10,11 +10,16 @@ _context.invoke('Nittro.Widgets', function(Dialog, Form, DOM, Arrays) {
         DOM.addListener(this._.elms.form, 'submit', this._handleSubmit.bind(this));
         this.on('button', this._handleButton.bind(this));
 
+        if (this._.options.autoFocus) {
+            this.on('show', this._autoFocus.bind(this));
+
+        }
     }, {
         STATIC: {
             defaults: {
                 classes: 'nittro-dialog-form',
                 hideOnSuccess: true,
+                autoFocus: true,
                 buttons: {
                     confirm: 'OK',
                     cancel: {label: 'Cancel', type: 'text'}
@@ -68,6 +73,13 @@ _context.invoke('Nittro.Widgets', function(Dialog, Form, DOM, Arrays) {
                 this._.form.reset();
 
             }
+        },
+
+        _autoFocus: function () {
+            try {
+                this._.form.getElements().item(0).focus();
+
+            } catch (e) { /* noop */ }
         },
 
         destroy: function () {
