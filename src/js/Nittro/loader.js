@@ -3,3 +3,4 @@
 /*! @include file="Widgets/AutoConfirm.js" */
 /*! @include file="Widgets/FormDialog.js" */
 /*! @include file="Widgets/Paginator.js" */
+/*! @include file="Widgets/DropZone.js" */

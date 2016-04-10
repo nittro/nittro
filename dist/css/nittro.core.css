@@ -75,6 +75,9 @@
   padding: 10px 20px;
   text-align: center;
 }
+.flash.flash-plain {
+  white-space: pre-line;
+}
 .flash.flash-show {
   -webkit-transition: none;
   -moz-transition: none;

@@ -52,7 +52,8 @@ _context.invoke(function(Nittro, DOM, Arrays) {
         },
         factories: {
             formDialog: 'Nittro.Widgets.FormDialog()',
-            paginator: 'Nittro.Widgets.Paginator()'
+            paginator: 'Nittro.Widgets.Paginator()',
+            dropZone: 'Nittro.Widgets.DropZone::create()'
         }
     });
 

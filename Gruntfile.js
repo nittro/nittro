@@ -11,7 +11,8 @@ module.exports = function (grunt) {
         'src/js/Nittro/Widgets/Confirm.js',
         'src/js/Nittro/Widgets/AutoConfirm.js',
         'src/js/Nittro/Widgets/FormDialog.js',
-        'src/js/Nittro/Widgets/Paginator.js'
+        'src/js/Nittro/Widgets/Paginator.js',
+        'src/js/Nittro/Widgets/DropZone.js'
     ];
 
     grunt.initConfig({
