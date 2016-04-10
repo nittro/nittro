@@ -525,16 +525,22 @@ _context.invoke('Nittro.Widgets', function(Dialog, Form, DOM, Arrays) {
 ;
 _context.invoke('Nittro.Widgets', function (Arrays, Strings, DOM, undefined) {
 
-    var Paginator = _context.extend('Nittro.Object', function(page, options) {
+    var Paginator = _context.extend('Nittro.Object', function(ajax, page, options) {
         Paginator.Super.call(this);
 
+        this._.ajaxService = ajax;
         this._.pageService = page;
         this._.options = Arrays.mergeTree({}, Paginator.defaults, options);
         this._.container = this._.options.container;
         this._.scrollContainer = this._resolveScrollContainer(this._.options.container, this._.options.scrollContainer);
 
         if (this._.options.pageSize === null) {
-            this._.options.pageSize = this._computePageSize();
+            throw new Error('You must specify the page size (number of items per page)');
+
+        }
+
+        if (this._.options.pageCount === null) {
+            throw new Error('You must specify the page count');
 
         }
 
@@ -543,128 +549,309 @@ _context.invoke('Nittro.Widgets', function (Arrays, Strings, DOM, undefined) {
 
         }
 
-        this._.page = this._.options.currentPage;
+        if (typeof this._.options.itemRenderer === 'string') {
+            this._.template = DOM.getById(this._.options.itemRenderer).innerHTML;
+
+        } else if (typeof this._.options.template === 'string') {
+            this._.template = this._.options.template;
+
+        }
+
+        this._.firstPage = this._.lastPage = this._.currentPage = this._.options.currentPage;
+        this._.lock = false;
+        this._.previousItems = null;
+        this._.previousThreshold = null;
         this._.nextThreshold = this._computeNextThreshold();
         this._.handleScroll = this._handleScroll.bind(this);
+        this._.prevContainer = DOM.create('div', {'class': 'paginator-previous'});
+        this._.container.insertBefore(this._.prevContainer, this._.container.firstChild);
+        this._.pageThresholds = [
+            {
+                page: this._.currentPage,
+                threshold: this._.prevContainer.nextElementSibling.getBoundingClientRect().top + this._getScrollTop()
+            }
+        ];
 
-        DOM.addListener(this._getScrollListener(), 'scroll', this._.handleScroll);
+        if (Arrays.isArray(this._.options.items)) {
+            this._getItems(this._.options.currentPage);
+
+        }
+
+        this._preparePreviousPage();
+        this._renderPreviousPage();
+
+        DOM.addListener(this._.scrollContainer, 'scroll', this._.handleScroll);
 
     }, {
         STATIC: {
             defaults: {
                 container: null,
                 scrollContainer: null,
+                itemRenderer: null,
                 template: null,
                 items: null,
+                url: null,
                 margin: null,
                 currentPage: 1,
+                pageCount: null,
                 pageSize: null
             }
         },
 
         destroy: function () {
-            DOM.removeListener(this._getScrollListener(), 'scroll', this._.handleScroll);
+            DOM.removeListener(this._.scrollContainer, 'scroll', this._.handleScroll);
             this._.container = this._.scrollContainer = this._.options = null;
 
         },
 
         _handleScroll: function () {
-            if (this._.nextThreshold !== null && this._.scrollContainer.scrollTop > this._.nextThreshold) {
-                this._.nextThreshold = null;
+            if (this._.lock) {
+                return;
 
-                this._renderNextPage().then(function() {
-                    this._.nextThreshold = this._computeNextThreshold();
+            }
 
-                }.bind(this));
+            this._.lock = true;
+
+            window.requestAnimationFrame(function() {
+                this._.lock = false;
+
+                var top = this._getScrollTop(),
+                    i, t, p, n;
+
+                if (this._.nextThreshold !== null && top > this._.nextThreshold) {
+                    this._.nextThreshold = null;
+                    this._renderNextPage();
+
+                } else if (this._.previousThreshold !== null && top < this._.previousThreshold) {
+                    this._.previousThreshold = null;
+                    this._renderPreviousPage();
+
+                }
+
+                for (i = 1, t = this._.pageThresholds.length; i <= t; i++) {
+                    p = this._.pageThresholds[i - 1];
+                    n = this._.pageThresholds[i];
+
+                    if (top > p.threshold && (!n || top < n.threshold) && p.page !== this._.currentPage) {
+                        this._.currentPage = p.page;
+                        this._.pageService.saveHistoryState(this._getPageUrl(p.page), null, true);
+
+                    }
+                }
+            }.bind(this));
+        },
+
+        _getPageUrl: function(page) {
+            var url = this._.options.url;
+
+            if (typeof url === 'function') {
+                return url.call(null, page);
+
+            } else {
+                return url.replace(/%page%/g, page);
+
             }
         },
 
-        _getScrollListener: function () {
-            return this._.scrollContainer === document.body ? window : this._.scrollContainer;
+        _getItems: function(page) {
+            if (Arrays.isArray(this._.options.items)) {
+                var args = new Array(this._.options.pageSize),
+                    items;
+
+                args.unshift((page - 1) * this._.options.pageSize, this._.options.pageSize);
+                items = this._.options.items.splice.apply(this._.options.items, args);
+                return Promise.resolve(items);
+
+            } else {
+                var url = this._getPageUrl(page);
+
+                return this._.ajaxService.get(url)
+                    .then(function(response) {
+                        return response.getPayload().items || [];
+                    });
+            }
         },
 
-        _renderNextPage: function () {
-            return new Promise(function(fulfill, reject) {
-                this._.page++;
+        _preparePreviousPage: function() {
+            if (this._.firstPage > 1) {
+                this._.previousItems = this._getItems(this._.firstPage - 1).then(function(items) {
+                    return items
+                        .map(this._createItem.bind(this))
+                        .map(function(elem) {
+                            this._.prevContainer.appendChild(elem);
+                            return elem;
 
-                if (Arrays.isArray(this._.options.items)) {
-                    var items = this._.options.items.slice((this._.page - 1) * this._.options.pageSize, this._.page * this._.options.pageSize);
-                    items.forEach(this._renderItem.bind(this));
+                        }.bind(this));
+                }.bind(this));
+            } else {
+                this._.previousItems = Promise.resolve(null);
 
-                    if (items.length === this._.options.pageSize) {
-                        fulfill();
-                    } else {
-                        reject();
-                    }
-                } else {
-                    this._.pageService.open(this._.options.items.replace(/%page%/, this._.page))
-                        .then(function(payload) {
-                            for (var id in payload.snippets) {
-                                fulfill();
-                                return;
-                            }
-
-                            reject();
-
-                        }.bind(this), reject);
-                }
-            }.bind(this));
+            }
         },
 
-        _renderItem: function (data) {
-            var tpl = DOM.getById(this._.options.template).innerHTML;
-
-            tpl = tpl.replace(/%([a-z0-9_.-]+)%/gi, function () {
-                var path = arguments[1].split(/\./g),
-                    cursor = data,
-                    i, p, n = path.length;
-
-                for (i = 0; i < n; i++) {
-                    p = path[i];
-
-                    if (Arrays.isArray(cursor) && p.match(/^\d+$/)) {
-                        p = parseInt(p);
-
-                    }
-
-                    if (cursor[p] === undefined) {
-                        return '';
-
-                    }
-
-                    cursor = cursor[p];
+        _renderPreviousPage: function() {
+            return this._.previousItems.then(function(items) {
+                if (!items) {
+                    return;
 
                 }
 
-                return cursor;
+                this._.firstPage--;
 
-            });
+                var scrollTop = this._getScrollTop(),
+                    style = window.getComputedStyle(this._.prevContainer),
+                    first = items[0],
+                    existing = this._.prevContainer.nextElementSibling || null,
+                    itemStyle = window.getComputedStyle(first),
+                    pt = parseFloat(style.paddingTop.replace(/px$/, '')),
+                    pb = parseFloat(style.paddingBottom.replace(/px$/, '')),
+                    m = 0,
+                    delta;
 
-            var elem = DOM.create('div');
-            DOM.html(elem, tpl);
+                if (!style.display.match(/flex$/) && itemStyle.float === 'none') {
+                    m = Math.max(parseFloat(itemStyle.marginTop.replace(/px$/, '')), parseFloat(itemStyle.marginBottom.replace(/px$/, '')));
 
-            DOM.getChildren(elem).forEach(function (node) {
-                this._.container.appendChild(node);
+                }
+
+                delta = this._.prevContainer.clientHeight - pt - pb - m;
+                scrollTop += delta;
+
+                while (items.length) {
+                    this._.container.insertBefore(items.shift(), existing);
+
+                }
+
+                window.requestAnimationFrame(function() {
+                    this._setScrollTop(scrollTop);
+
+                    this._.pageThresholds.forEach(function(t) {
+                        t.threshold += delta
+                    });
+
+                    this._.pageThresholds.unshift({
+                        page: this._.firstPage,
+                        threshold: first.getBoundingClientRect().top + scrollTop
+                    });
+
+                }.bind(this));
+
+                this._preparePreviousPage();
+                this._.previousThreshold = this._computePreviousThreshold();
+
             }.bind(this));
+        },
+
+        _renderNextPage: function() {
+            return this._getItems(this._.lastPage + 1).then(function(items) {
+                this._.lastPage++;
+
+                items = items.map(this._createItem.bind(this));
+
+                var first = items[0];
+
+                while (items.length) {
+                    this._.container.appendChild(items.shift());
+
+                }
+
+                this._.nextThreshold = this._computeNextThreshold();
+
+                this._.pageThresholds.push({
+                    page: this._.lastPage,
+                    threshold: first.getBoundingClientRect().top + this._getScrollTop()
+                });
+
+            }.bind(this));
+        },
+
+        _createItem: function(data) {
+            var item = this._renderItem(data);
+
+            if (typeof item === 'string') {
+                item = DOM.createFromHtml(item);
+
+            }
+
+            if (Arrays.isArray(item)) {
+                throw new Error("Rendered item contains more than one root HTML element");
+
+            }
+
+            return item;
 
         },
 
-        _computePageSize: function () {
-            return DOM.getChildren(this._.container).length;
+        _renderItem: function(data) {
+            if (typeof data === 'string') {
+                return data;
+
+            } else if (this._.template) {
+                return this._.template.replace(/%([a-z0-9_.-]+)%/gi, function () {
+                    var path = arguments[1].split(/\./g),
+                        cursor = data,
+                        i, p, n = path.length;
+
+                    for (i = 0; i < n; i++) {
+                        p = path[i];
+
+                        if (Arrays.isArray(cursor) && p.match(/^\d+$/)) {
+                            p = parseInt(p);
+
+                        }
+
+                        if (cursor[p] === undefined) {
+                            return '';
+
+                        }
+
+                        cursor = cursor[p];
+
+                    }
+
+                    return Strings.escapeHtml(cursor + '');
+
+                });
+            } else {
+                return this._.options.itemRenderer.call(null, data);
+
+            }
         },
 
-        _computeMargin: function () {
-            return window.innerHeight / 2;
+        _computePreviousThreshold: function() {
+            return this._.firstPage > 1 ? this._.options.margin : null;
+
         },
 
-        _computeNextThreshold: function () {
-            if (!this._.container.lastElementChild) {
+        _computeNextThreshold: function() {
+            if (!this._.container.lastElementChild || this._.lastPage >= this._.options.pageCount) {
                 return null;
             }
 
-            var ofs = this._.container.lastElementChild.getBoundingClientRect().top;
-            return Math.max(0, ofs + document.body.scrollTop - window.innerHeight - this._.options.margin);
+            var ofs = this._.container.lastElementChild.getBoundingClientRect().bottom;
+            return Math.max(0, ofs + this._getScrollTop() - this._getScrollContainerHeight() - this._.options.margin);
 
+        },
+
+        _computeMargin: function () {
+            return this._getScrollContainerHeight() / 2;
+
+        },
+
+        _getScrollContainerHeight: function() {
+            return this._.scrollContainer.clientHeight || this._.scrollContainer.innerHeight;
+
+        },
+
+        _getScrollTop: function() {
+            return this._.scrollContainer === window ? window.pageYOffset : this._.scrollContainer.scrollTop;
+        },
+
+        _setScrollTop: function(to) {
+            if (this._.scrollContainer === window) {
+                window.scrollTo(0, to);
+            } else {
+                this._.scrollContainer.scrollTop = to;
+            }
         },
 
         _resolveScrollContainer: function (elem, scrollContainer) {
@@ -683,11 +870,11 @@ _context.invoke('Nittro.Widgets', function (Arrays, Strings, DOM, undefined) {
 
                 }
             } else if (scrollContainer === null) {
-                scrollContainer = document.body;
+                return window;
 
             }
 
-            return scrollContainer;
+            return !scrollContainer || scrollContainer === document.body ? window : scrollContainer;
 
         }
     });

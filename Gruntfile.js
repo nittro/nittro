@@ -85,14 +85,17 @@ module.exports = function (grunt) {
                 },
                 files: {
                     'dist/css/nittro.min.css': [
-                        'src/css/dialogs.less'
+                        'src/css/dialogs.less',
+                        'src/css/paginator.less'
                     ],
                     'dist/css/nittro.core.min.css': [
                         'src/css/dialogs.less',
+                        'src/css/paginator.less',
                         'bower_components/nittro-page/src/css/flashes.less'
                     ],
                     'dist/css/nittro.full.min.css': [
                         'src/css/dialogs.less',
+                        'src/css/paginator.less',
                         'bower_components/nittro-page/src/css/flashes.less',
                         'bower_components/nittro-page/src/css/transitions.less'
                     ]
@@ -104,14 +107,17 @@ module.exports = function (grunt) {
                 },
                 files: {
                     'dist/css/nittro.css': [
-                        'src/css/dialogs.less'
+                        'src/css/dialogs.less',
+                        'src/css/paginator.less'
                     ],
                     'dist/css/nittro.core.css': [
                         'src/css/dialogs.less',
+                        'src/css/paginator.less',
                         'bower_components/nittro-page/src/css/flashes.less'
                     ],
                     'dist/css/nittro.full.css': [
                         'src/css/dialogs.less',
+                        'src/css/paginator.less',
                         'bower_components/nittro-page/src/css/flashes.less',
                         'bower_components/nittro-page/src/css/transitions.less'
                     ]
