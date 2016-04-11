@@ -80,6 +80,7 @@
   align-items: inherit;
   -webkit-align-content: inherit;
   align-content: inherit;
+  list-style: inherit;
   -webkit-transform: translateX(-3000px);
   -moz-transform: translateX(-3000px);
   -ms-transform: translateX(-3000px);

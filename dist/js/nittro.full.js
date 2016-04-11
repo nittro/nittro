@@ -8366,11 +8366,18 @@ _context.invoke('Nittro.Widgets', function (Arrays, Strings, DOM, undefined) {
         this._.firstPage = this._.lastPage = this._.currentPage = this._.options.currentPage;
         this._.lock = false;
         this._.previousItems = null;
-        this._.previousThreshold = null;
+        this._.previousLock = {
+            time: Date.now() + 1000,
+            threshold: this._computeElemOffset(this._.container.firstElementChild)
+        };
+        this._.previousThreshold = this._computePreviousThreshold();
         this._.nextThreshold = this._computeNextThreshold();
         this._.handleScroll = this._handleScroll.bind(this);
-        this._.prevContainer = DOM.create('div', {'class': 'paginator-previous'});
+
+        var prevElem = this._.container.tagName.toLowerCase();
+        this._.prevContainer = DOM.create(prevElem, {'class': 'paginator-previous'});
         this._.container.insertBefore(this._.prevContainer, this._.container.firstChild);
+
         this._.pageThresholds = [
             {
                 page: this._.currentPage,
@@ -8384,7 +8391,6 @@ _context.invoke('Nittro.Widgets', function (Arrays, Strings, DOM, undefined) {
         }
 
         this._preparePreviousPage();
-        this._renderPreviousPage();
 
         DOM.addListener(this._.scrollContainer, 'scroll', this._.handleScroll);
 
@@ -8429,13 +8435,18 @@ _context.invoke('Nittro.Widgets', function (Arrays, Strings, DOM, undefined) {
                     this._.nextThreshold = null;
                     this._renderNextPage();
 
+                } else if (this._.previousLock) {
+                    if (this._.previousLock.time < Date.now() && top > this._.previousLock.threshold) {
+                        this._.previousLock = null;
+
+                    }
                 } else if (this._.previousThreshold !== null && top < this._.previousThreshold) {
                     this._.previousThreshold = null;
                     this._renderPreviousPage();
 
                 }
 
-                if (this._.options.history) {
+                if ((!this._.previousLock || this._.previousLock.time < Date.now()) && this._.options.history) {
                     for (i = 1, t = this._.pageThresholds.length; i <= t; i++) {
                         p = this._.pageThresholds[i - 1];
                         n = this._.pageThresholds[i];
@@ -8443,6 +8454,7 @@ _context.invoke('Nittro.Widgets', function (Arrays, Strings, DOM, undefined) {
                         if (top > p.threshold && (!n || top < n.threshold) && p.page !== this._.currentPage) {
                             this._.currentPage = p.page;
                             this._.pageService.saveHistoryState(this._getPageUrl(p.page), null, true);
+                            break;
 
                         }
                     }
