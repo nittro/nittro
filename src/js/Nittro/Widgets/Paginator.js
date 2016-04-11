@@ -24,6 +24,11 @@ _context.invoke('Nittro.Widgets', function (Arrays, Strings, DOM, undefined) {
 
         }
 
+        if (this._.options.history === null) {
+            this._.options.history = !!this._.options.url;
+
+        }
+
         if (typeof this._.options.itemRenderer === 'string') {
             this._.template = DOM.getById(this._.options.itemRenderer).innerHTML;
 
@@ -43,7 +48,7 @@ _context.invoke('Nittro.Widgets', function (Arrays, Strings, DOM, undefined) {
         this._.pageThresholds = [
             {
                 page: this._.currentPage,
-                threshold: this._.prevContainer.nextElementSibling.getBoundingClientRect().top + this._getScrollTop()
+                threshold: this._computeElemOffset(this._.prevContainer.nextElementSibling) + this._getScrollTop()
             }
         ];
 
@@ -66,6 +71,7 @@ _context.invoke('Nittro.Widgets', function (Arrays, Strings, DOM, undefined) {
                 template: null,
                 items: null,
                 url: null,
+                history: null,
                 margin: null,
                 currentPage: 1,
                 pageCount: null,
@@ -103,14 +109,16 @@ _context.invoke('Nittro.Widgets', function (Arrays, Strings, DOM, undefined) {
 
                 }
 
-                for (i = 1, t = this._.pageThresholds.length; i <= t; i++) {
-                    p = this._.pageThresholds[i - 1];
-                    n = this._.pageThresholds[i];
+                if (this._.options.history) {
+                    for (i = 1, t = this._.pageThresholds.length; i <= t; i++) {
+                        p = this._.pageThresholds[i - 1];
+                        n = this._.pageThresholds[i];
 
-                    if (top > p.threshold && (!n || top < n.threshold) && p.page !== this._.currentPage) {
-                        this._.currentPage = p.page;
-                        this._.pageService.saveHistoryState(this._getPageUrl(p.page), null, true);
+                        if (top > p.threshold && (!n || top < n.threshold) && p.page !== this._.currentPage) {
+                            this._.currentPage = p.page;
+                            this._.pageService.saveHistoryState(this._getPageUrl(p.page), null, true);
 
+                        }
                     }
                 }
             }.bind(this));
@@ -205,7 +213,7 @@ _context.invoke('Nittro.Widgets', function (Arrays, Strings, DOM, undefined) {
 
                     this._.pageThresholds.unshift({
                         page: this._.firstPage,
-                        threshold: first.getBoundingClientRect().top + scrollTop
+                        threshold: this._computeElemOffset(first) + scrollTop
                     });
 
                 }.bind(this));
@@ -233,7 +241,7 @@ _context.invoke('Nittro.Widgets', function (Arrays, Strings, DOM, undefined) {
 
                 this._.pageThresholds.push({
                     page: this._.lastPage,
-                    threshold: first.getBoundingClientRect().top + this._getScrollTop()
+                    threshold: this._computeElemOffset(first) + this._getScrollTop()
                 });
 
             }.bind(this));
@@ -302,8 +310,20 @@ _context.invoke('Nittro.Widgets', function (Arrays, Strings, DOM, undefined) {
                 return null;
             }
 
-            var ofs = this._.container.lastElementChild.getBoundingClientRect().bottom;
+            var ofs = this._computeElemOffset(this._.container.lastElementChild, 'bottom');
             return Math.max(0, ofs + this._getScrollTop() - this._getScrollContainerHeight() - this._.options.margin);
+
+        },
+
+        _computeElemOffset: function(elem, edge) {
+            var offset = elem.getBoundingClientRect()[edge || 'top'];
+
+            if (this._.scrollContainer !== window) {
+                offset -= this._.scrollContainer.getBoundingClientRect().top;
+
+            }
+
+            return offset;
 
         },
 
