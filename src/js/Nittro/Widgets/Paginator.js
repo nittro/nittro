@@ -7,7 +7,7 @@ _context.invoke('Nittro.Widgets', function (Arrays, Strings, DOM, undefined) {
         this._.pageService = page;
         this._.options = Arrays.mergeTree({}, Paginator.defaults, options);
         this._.container = this._.options.container;
-        this._.scrollContainer = this._resolveScrollContainer(this._.options.container, this._.options.scrollContainer);
+        this._.viewport = this._resolveViewport(this._.options.container, this._.options.viewport);
 
         if (this._.options.pageSize === null) {
             throw new Error('You must specify the page size (number of items per page)');
@@ -66,13 +66,13 @@ _context.invoke('Nittro.Widgets', function (Arrays, Strings, DOM, undefined) {
 
         this._preparePreviousPage();
 
-        DOM.addListener(this._.scrollContainer, 'scroll', this._.handleScroll);
+        DOM.addListener(this._.viewport, 'scroll', this._.handleScroll);
 
     }, {
         STATIC: {
             defaults: {
                 container: null,
-                scrollContainer: null,
+                viewport: null,
                 itemRenderer: null,
                 template: null,
                 items: null,
@@ -86,8 +86,8 @@ _context.invoke('Nittro.Widgets', function (Arrays, Strings, DOM, undefined) {
         },
 
         destroy: function () {
-            DOM.removeListener(this._.scrollContainer, 'scroll', this._.handleScroll);
-            this._.container = this._.scrollContainer = this._.options = null;
+            DOM.removeListener(this._.viewport, 'scroll', this._.handleScroll);
+            this._.container = this._.viewport = this._.options = null;
 
         },
 
@@ -323,15 +323,15 @@ _context.invoke('Nittro.Widgets', function (Arrays, Strings, DOM, undefined) {
             }
 
             var ofs = this._computeElemOffset(this._.container.lastElementChild, 'bottom');
-            return Math.max(0, ofs + this._getScrollTop() - this._getScrollContainerHeight() - this._.options.margin);
+            return Math.max(0, ofs + this._getScrollTop() - this._getViewportHeight() - this._.options.margin);
 
         },
 
         _computeElemOffset: function(elem, edge) {
             var offset = elem.getBoundingClientRect()[edge || 'top'];
 
-            if (this._.scrollContainer !== window) {
-                offset -= this._.scrollContainer.getBoundingClientRect().top;
+            if (this._.viewport !== window) {
+                offset -= this._.viewport.getBoundingClientRect().top;
 
             }
 
@@ -340,48 +340,47 @@ _context.invoke('Nittro.Widgets', function (Arrays, Strings, DOM, undefined) {
         },
 
         _computeMargin: function () {
-            return this._getScrollContainerHeight() / 2;
+            return this._getViewportHeight() / 2;
 
         },
 
-        _getScrollContainerHeight: function() {
-            return this._.scrollContainer.clientHeight || this._.scrollContainer.innerHeight;
+        _getViewportHeight: function() {
+            return this._.viewport.clientHeight || this._.viewport.innerHeight;
 
         },
 
         _getScrollTop: function() {
-            return this._.scrollContainer === window ? window.pageYOffset : this._.scrollContainer.scrollTop;
+            return this._.viewport === window ? window.pageYOffset : this._.viewport.scrollTop;
         },
 
         _setScrollTop: function(to) {
-            if (this._.scrollContainer === window) {
+            if (this._.viewport === window) {
                 window.scrollTo(0, to);
             } else {
-                this._.scrollContainer.scrollTop = to;
+                this._.viewport.scrollTop = to;
             }
         },
 
-        _resolveScrollContainer: function (elem, scrollContainer) {
-            if (scrollContainer === 'auto') {
-                scrollContainer = elem;
+        _resolveViewport: function (elem, viewport) {
+            if (viewport === 'auto') {
+                viewport = elem;
 
                 function isScrollable(elem) {
                     var style = window.getComputedStyle(elem);
                     return style.overflow === 'auto' || style.overflow === 'scroll'
-                        || style.overflowX === 'auto' || style.overflowX === 'scroll'
                         || style.overflowY === 'auto' || style.overflowY === 'scroll';
                 }
 
-                while (scrollContainer && scrollContainer !== document.body && !isScrollable(scrollContainer)) {
-                    scrollContainer = scrollContainer.parentNode;
+                while (viewport && viewport !== document.body && !isScrollable(viewport)) {
+                    viewport = viewport.parentNode;
 
                 }
-            } else if (scrollContainer === null) {
+            } else if (viewport === null) {
                 return window;
 
             }
 
-            return !scrollContainer || scrollContainer === document.body ? window : scrollContainer;
+            return !viewport || viewport === document.body ? window : viewport;
 
         }
     });
