@@ -37,6 +37,11 @@ _context.invoke('Nittro.Widgets', function (Arrays, Strings, DOM, undefined) {
 
         }
 
+        if (this._.options.responseProcessor === null) {
+            this._.options.responseProcessor = this._processResponse.bind(this);
+
+        }
+
         this._.firstPage = this._.lastPage = this._.currentPage = this._.options.currentPage;
         this._.lock = false;
         this._.previousItems = null;
@@ -77,6 +82,7 @@ _context.invoke('Nittro.Widgets', function (Arrays, Strings, DOM, undefined) {
                 template: null,
                 items: null,
                 url: null,
+                responseProcessor: null,
                 history: null,
                 margin: null,
                 currentPage: 1,
@@ -161,10 +167,14 @@ _context.invoke('Nittro.Widgets', function (Arrays, Strings, DOM, undefined) {
                 var url = this._getPageUrl(page);
 
                 return this._.ajaxService.get(url)
-                    .then(function(response) {
-                        return response.getPayload().items || [];
-                    });
+                    .then(this._.options.responseProcessor)
+                    .then(function(items) { return Arrays.isArray(items) ? items : []; });
             }
+        },
+
+        _processResponse: function(response) {
+            return response.getPayload().items || [];
+
         },
 
         _preparePreviousPage: function() {
