@@ -14,8 +14,11 @@
 	} else if (typeof module === 'object' && typeof module.exports === 'object') {
 		module.exports = factory(global);
 	} else {
+		var init = !global.Nette || !global.Nette.noInit;
 		global.Nette = factory(global);
+		if (init) {
 
+		}
 	}
 
 }(typeof window !== 'undefined' ? window : this, function(window) {
@@ -2733,16 +2736,81 @@ _context.invoke('Utils', function (Arrays, Strings, undefined) {
             });
         },
 
-        getStyle: function(elem, prop, prefix) {
-            if (prefix !== false) {
-                prop = getPrefixed(elem, prop);
+        getStyle: function(elem, props, prefix) {
+            props = props.split(/\s+/g);
 
+            var prefixed = props;
+
+            if (prefix !== false) {
+                prefixed = props.map(function(prop) {
+                    return getPrefixed(elem, prop);
+                });
             }
 
             return map([elem], function(elem) {
-                return window.getComputedStyle(elem)[prop];
+                var style = window.getComputedStyle(elem);
 
+                if (props.length === 1) {
+                    return style[prefixed[0]];
+
+                } else {
+                    var res = {};
+
+                    props.forEach(function(prop, i) {
+                        res[prop] = style[prefixed[i]];
+
+                    });
+
+                    return res;
+
+                }
             });
+        },
+
+        getStyleFloat: function(elem, props, prefix) {
+            var style = DOM.getStyle(elem, props, prefix),
+                refloat = /^(\d+|\d*\.\d+)(px|m?s)?$/;
+
+            props = props.split(/\s+/g);
+
+            function normalizeValue(v) {
+                var m = refloat.exec(v);
+
+                if (m) {
+                    v = parseFloat(m[1]);
+
+                    if (m[2] === 's') {
+                        v *= 1000;
+
+                    }
+                }
+
+                return v;
+
+            }
+
+            function stylePropsToFloat(style) {
+                if (props.length === 1) {
+                    return normalizeValue(style);
+
+                } else {
+                    props.forEach(function(prop) {
+                        style[prop] = normalizeValue(style[prop]);
+
+                    });
+
+                    return style;
+
+                }
+            }
+
+            if (Arrays.isArray(style)) {
+                return style.map(stylePropsToFloat);
+
+            } else {
+                return stylePropsToFloat(style);
+
+            }
         },
 
         html: function (elem, html) {
@@ -3811,7 +3879,7 @@ _context.invoke('Nittro.Ajax.Transport', function (Response, FormData, Url) {
             var onLoad = function (evt) {
                 cleanup();
 
-                if (xhr.status === 200) {
+                if (xhr.status >= 200 && xhr.status < 300) {
                     var response = self._createResponse(xhr);
                     request.trigger('success', response);
                     fulfill(response);
@@ -3852,7 +3920,7 @@ _context.invoke('Nittro.Ajax.Transport', function (Response, FormData, Url) {
             } else {
                 xhr.onreadystatechange = function () {
                     if (xhr.readyState === 4) {
-                        if (xhr.status === 200) {
+                        if (xhr.status >= 200 && xhr.status < 300) {
                             onLoad();
 
                         } else {
@@ -3961,7 +4029,7 @@ _context.invoke('Nittro.Ajax.Transport', function (Response, FormData, Url) {
                     status: null,
                     response: response
                 };
-            } else if (xhr.status !== 200) {
+            } else if (xhr.status < 200 || xhr.status >= 300) {
                 return {
                     type: 'response',
                     status: xhr.status,
@@ -4908,15 +4976,17 @@ _context.invoke('Nittro.Page', function (DOM, Arrays, Url, SnippetHelpers, Snipp
             }
 
             if (url) {
-                url = Url.from(url).toAbsolute();
+                url = Url.from(url);
             } else {
-                url = document.location.href;
+                url = Url.fromCurrent();
             }
 
+            this._.currentUrl = url;
+
             if (replace) {
-                window.history.replaceState({ _nittro: true }, title, url);
+                window.history.replaceState({ _nittro: true }, title, url.toAbsolute());
             } else {
-                window.history.pushState({ _nittro: true }, title, url);
+                window.history.pushState({ _nittro: true }, title, url.toAbsolute());
             }
 
             return this;
@@ -4941,14 +5011,14 @@ _context.invoke('Nittro.Page', function (DOM, Arrays, Url, SnippetHelpers, Snipp
                 return;
             }
 
-            var url = Url.fromCurrent(),
-                request;
+            var url, request;
 
-            if (!this._checkUrl(url)) {
+            if (!this._checkUrl(null, this._.currentUrl)) {
                 return;
 
             }
 
+            url = Url.fromCurrent();
             this._.currentUrl = url;
             request = this._.ajax.createRequest(url);
 
@@ -5173,15 +5243,14 @@ _context.invoke('Nittro.Page', function (DOM, Arrays, Url, SnippetHelpers, Snipp
 
         },
 
-        _checkUrl: function(url) {
-            var u = Url.from(url),
-                c = Url.fromCurrent(),
-                d = u.compare(c);
-
-            if (d === Url.PART.HASH && !u.getHash()) {
-                return true;
-
+        _checkUrl: function(url, current) {
+            if ((url + '').match(/^javascript:/)) {
+                return false;
             }
+
+            var u = url ? Url.from(url) : Url.fromCurrent(),
+                c = current ? Url.from(current) : Url.fromCurrent(),
+                d = u.compare(c);
 
             return d === 0 || d < Url.PART.PORT && d > Url.PART.HASH;
 
