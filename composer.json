@@ -1,6 +1,8 @@
 {
     "name": "nittro/nittro",
     "description": "JavaScript client-side library to use with the Nette framework",
+    "type": "library",
+    "license": "MIT",
     "authors": [
         {
             "name": "Dan Kadera",
