@@ -16,11 +16,11 @@ function normalizeOptions(options) {
         throw new Error('Bower dir "' + options.bowerDir + '" doesn\'t exist');
     }
 
-    'vendor' in options || (options.vendor = []);
+    'vendor' in options || (options.vendor = {});
     'base' in options || (options.base = {});
     'extras' in options || (options.extras = {});
-    'libraries' in options || (options.libraries = []);
-    'bootstrap' in options || (options.bootstrap = null);
+    'libraries' in options || (options.libraries = {});
+    'bootstrap' in options || (options.bootstrap = true);
     'stack' in options || (options.stack = true);
 
     options.base = prefixPackages(options.base, 'nittro-');
@@ -143,7 +143,7 @@ function getPackageFiles(pkg, bowerDir) {
 function buildFileList(options, packages, type) {
     var files = [];
 
-    options.vendor.forEach(function(file) {
+    type in options.vendor && options.vendor[type].forEach(function(file) {
         files.push(formatFilePath(options.baseDir, file));
     });
 
@@ -161,14 +161,14 @@ function buildFileList(options, packages, type) {
         }
     });
 
-    options.libraries.forEach(function(file) {
+    type in options.libraries && options.libraries[type].forEach(function(file) {
         files.push(formatFilePath(options.baseDir, file));
     });
 
     if (type === 'js') {
-        if (options.bootstrap) {
+        if (typeof options.bootstrap === 'string') {
             files.push(formatFilePath(options.baseDir, options.bootstrap));
-        } else {
+        } else if (options.bootstrap) {
             files.push('__bootstrap-generated.js');
         }
 
@@ -181,7 +181,87 @@ function buildFileList(options, packages, type) {
 
 }
 
-function buildBootstrap(packages, bowerDir) {
+
+
+
+function Builder(options) {
+    if (!(this instanceof Builder)) {
+        return new Builder(options);
+        
+    }
+
+    this._ = {
+        options: normalizeOptions(options),
+        fileList: {
+            js: null,
+            css: null
+        },
+        compat: null
+    };
+
+    this._.packages = buildPackageList(options.base, options.extras, options.bowerDir);
+
+}
+
+Builder.prototype.getBaseDir = function () {
+    return this._.options.baseDir;
+};
+
+Builder.prototype.getFileList = function(type) {
+    if (this._.fileList[type] === null) {
+        this._.fileList[type] = buildFileList(this._.options, this._.packages, type);
+
+    }
+
+    return this._.fileList[type];
+
+};
+
+Builder.prototype.getStackPath = function() {
+    return formatFilePath(this._.options.bowerDir, 'nittro-core/src/js/stack.js');
+};
+
+Builder.prototype.getCompatFlags = function() {
+    if (this._.compat === null) {
+        this._.compat = {};
+
+        this._.packages.forEach(function(pkg) {
+            var meta = readNittroMeta(pkg, this._.options.bowerDir),
+                flag;
+
+            if (meta && meta.compat) {
+                for (flag in meta.compat) {
+                    if (meta.compat[flag]) {
+                        this._.compat[flag] || (this._.compat[flag] = []);
+                        this._.compat[flag].push(pkg);
+
+                    }
+                }
+            }
+        }.bind(this));
+    }
+
+    return this._.compat;
+};
+
+
+Builder.prototype.buildJs = function () {
+    return this.getFileList('js').map(function(path) {
+        if (path === '__bootstrap-generated.js') {
+            return this.buildBootstrap();
+        } else {
+            return fs.readFileSync(path);
+        }
+    }.bind(this)).join("\n");
+};
+
+Builder.prototype.buildCss = function() {
+    return this.getFileList('css').map(function(path) {
+        return fs.readFileSync(path);
+    }).join("\n");
+};
+
+Builder.prototype.buildBootstrap = function () {
     var bootstrap = [
         "_context.invoke(function(Nittro, DOM, Arrays) {",
         "    var params = DOM.getById('nittro-params'),",
@@ -206,15 +286,15 @@ function buildBootstrap(packages, bowerDir) {
 
     var extensions = {};
 
-    packages.forEach(function(pkg) {
-        var meta = readNittroMeta(pkg, bowerDir);
+    this._.packages.forEach(function(pkg) {
+        var meta = readNittroMeta(pkg, this._.options.bowerDir);
 
         if (meta && meta.di) {
             extensions[pkg] = meta.di;
         }
-    });
+    }.bind(this));
 
-    if (packages.indexOf('nittro-extras-dialogs') > -1) {
+    if (this._.packages.indexOf('nittro-extras-dialogs') > -1) {
         bootstrap.push(
             "    Nittro.Extras.Dialogs.Dialog.setDefaults({",
             "        layer: document.body",
@@ -239,62 +319,7 @@ function buildBootstrap(packages, bowerDir) {
     );
 
     return bootstrap.join("\n");
-}
 
-function buildJs(options) {
-    var packages = buildPackageList(options.base, options.extras, options.bowerDir),
-        files = buildFileList(options, packages, 'js');
-
-    return files.map(function(path) {
-        if (path === '__bootstrap-generated.js') {
-            return buildBootstrap(packages, options.bowerDir);
-        } else {
-            return fs.readFileSync(path);
-        }
-    }).join("\n");
-}
-
-function buildCss(options) {
-    var packages = buildPackageList(options.base, options.extras, options.bowerDir),
-        files = buildFileList(options, packages, 'css');
-
-    return files.map(function(path) {
-        return fs.readFileSync(path);
-    }).join("\n");
-}
-
-module.exports = {
-    buildJs: function(options) {
-        return buildJs(normalizeOptions(options));
-    },
-    buildCss: function(options) {
-        return buildCss(normalizeOptions(options));
-    },
-    buildJsFileList: function(options) {
-        options = normalizeOptions(options);
-
-        return buildFileList(
-            options,
-            buildPackageList(options.base, options.extras, options.bowerDir),
-            'js'
-        );
-    },
-    buildCssFileList: function(options) {
-        options = normalizeOptions(options);
-
-        return buildFileList(
-            options,
-            buildPackageList(options.base, options.extras, options.bowerDir),
-            'css'
-        );
-    },
-    buildBootstrap: function(options) {
-        options = normalizeOptions(options);
-
-        return buildBootstrap(
-            buildPackageList(options.base, options.extras, options.bowerDir),
-            options.bowerDir
-        );
-
-    }
 };
+
+module.exports = Builder;
