@@ -35,7 +35,7 @@ function prefixPackages(packages, prefix) {
         pkg;
 
     for (pkg in packages) {
-        if (packages[pkg]) {
+        if (packages.hasOwnProperty(pkg) && packages[pkg]) {
             prefixed[prefix + pkg] = packages[pkg];
 
         }
@@ -48,13 +48,13 @@ function prefixPackages(packages, prefix) {
 function buildPackageList(base, extras, bowerDir) {
     var pkg, packages = [];
 
-    for (pkg in base) {
-        addPackageWithDependencies(packages, pkg, bowerDir);
-    }
-
-    for (pkg in extras) {
-        addPackageWithDependencies(packages, pkg, bowerDir);
-    }
+    [base, extras].forEach(function(source) {
+        for (pkg in source) {
+            if (source.hasOwnProperty(pkg)) {
+                addPackageWithDependencies(packages, pkg, bowerDir);
+            }
+        }
+    });
 
     return packages;
 
@@ -80,8 +80,14 @@ function getDependencies(pkg, bowerDir) {
     var meta = readBowerMeta(pkg, bowerDir),
         dep, dependencies = [];
 
+    if (!meta.dependencies) {
+        return dependencies;
+    }
+
     for (dep in meta.dependencies) {
-        dependencies.push(dep);
+        if (meta.dependencies.hasOwnProperty(dep)) {
+            dependencies.push(dep);
+        }
     }
 
     return dependencies;
@@ -140,16 +146,65 @@ function getPackageFiles(pkg, bowerDir) {
     }
 }
 
-function buildFileList(options, packages, type) {
-    var files = [];
+function getBridges(packages, bowerDir) {
+    var bridges = [];
 
-    type in options.vendor && options.vendor[type].forEach(function(file) {
-        files.push(formatFilePath(options.baseDir, file));
+    packages.forEach(function(pkg) {
+        var meta = readNittroMeta(pkg, bowerDir),
+            dep;
+
+        if (meta && meta.bridges) {
+            for (dep in meta.bridges) {
+                if (meta.bridges.hasOwnProperty(dep) && packages.indexOf(dep) > -1 && meta.bridges[dep].files) {
+                    meta.bridges[dep].files.forEach(function (file) {
+                        bridges.push(formatFilePath(bowerDir, pkg + '/' + file));
+
+                    });
+                }
+            }
+        }
     });
+
+    return bridges;
+
+}
+
+function getExtensions(packages, bowerDir) {
+    var extensions = {};
+
+    packages.forEach(function(pkg) {
+        var meta = readNittroMeta(pkg, bowerDir),
+            dep, ext;
+
+        if (meta && meta.bridges) {
+            for (dep in meta.bridges) {
+                if (meta.bridges.hasOwnProperty(dep) && packages.indexOf(dep) > -1 && meta.bridges[dep].extensions) {
+                    for (ext in meta.bridges[dep].extensions) {
+                        if (meta.bridges[dep].extensions.hasOwnProperty(ext)) {
+                            extensions[ext] = meta.bridges[dep].extensions[ext];
+
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    return extensions;
+
+}
+
+function buildFileList(options, packages, type) {
+    var files = [],
+        i, j, n;
 
     if (type === 'js' && packages.indexOf('nittro-forms') > -1) {
         files.push(formatFilePath(options.bowerDir, 'nittro-forms/src/js/Nittro/Forms/Bridges/netteForms.js'));
     }
+
+    type in options.vendor && options.vendor[type].forEach(function(file) {
+        files.push(formatFilePath(options.baseDir, file));
+    });
 
     packages.forEach(function(pkg) {
         var pkgFiles = getPackageFiles(pkg, options.bowerDir);
@@ -160,6 +215,12 @@ function buildFileList(options, packages, type) {
             });
         }
     });
+
+    if (type === 'js') {
+        var bridges = getBridges(packages, options.bowerDir);
+        files = files.concat(bridges);
+
+    }
 
     type in options.libraries && options.libraries[type].forEach(function(file) {
         files.push(formatFilePath(options.baseDir, file));
@@ -177,6 +238,16 @@ function buildFileList(options, packages, type) {
         }
     }
 
+    for (i = 0, n = files.length; i < n; i++) {
+        for (j = i + 1; j < n; j++) {
+            if (files[j] === files[i]) {
+                files.splice(j, 1);
+                j--;
+                n--;
+            }
+        }
+    }
+
     return files;
 
 }
@@ -187,11 +258,13 @@ function buildFileList(options, packages, type) {
 function Builder(options) {
     if (!(this instanceof Builder)) {
         return new Builder(options);
-        
+
     }
 
+    options = normalizeOptions(options);
+
     this._ = {
-        options: normalizeOptions(options),
+        options: options,
         fileList: {
             js: null,
             css: null
@@ -263,36 +336,26 @@ Builder.prototype.buildCss = function() {
 
 Builder.prototype.buildBootstrap = function () {
     var bootstrap = [
-        "_context.invoke(function(Nittro, DOM, Arrays) {",
-        "    var params = DOM.getById('nittro-params'),",
-        "        defaults = {",
-        "            basePath: '',",
-        "            'nittro-page': {",
-        "                whitelistLinks: false,",
-        "                whitelistForms: false,",
-        "                whitelistRedirects: true,",
-        "                defaultTransition: '.transition-auto'",
-        "            },",
-        "            'nittro-extras-flashes': {",
-        "                layer: document.body",
-        "            }",
-        "        };\n",
-        "    if (params && params.nodeName.toLowerCase() === 'script' && params.type === 'application/json') {",
-        "        params = Arrays.mergeTree(defaults, JSON.parse(params.textContent.trim()));\n",
-        "    } else {",
-        "        params = defaults;\n",
-        "    }\n"
+        "_context.invoke(function(Nittro) {"
     ];
 
-    var extensions = {};
+    var config = {
+        params: {},
+        extensions: getExtensions(this._.packages, this._.options.bowerDir)
+    };
 
-    this._.packages.forEach(function(pkg) {
-        var meta = readNittroMeta(pkg, this._.options.bowerDir);
+    if (typeof this._.options.bootstrap === 'object') {
+        ['params', 'extensions'].forEach(function(section) {
+            if (section in this._.options.bootstrap) {
+                for (var key in this._.options.bootstrap[section]) {
+                    if (this._.options.bootstrap[section].hasOwnProperty(key)) {
+                        config[section][key] = this._.options.bootstrap[section][key];
 
-        if (meta && meta.di) {
-            extensions[pkg] = meta.di;
-        }
-    }.bind(this));
+                    }
+                }
+            }
+        }.bind(this));
+    }
 
     if (this._.packages.indexOf('nittro-extras-dialogs') > -1) {
         bootstrap.push(
@@ -303,18 +366,12 @@ Builder.prototype.buildBootstrap = function () {
     }
 
     bootstrap.push(
-        "    var builder = new Nittro.DI.ContainerBuilder({",
-        "        extensions: " + JSON.stringify(extensions, null, 4).replace(/\n/g, "\n        ") + ",",
-        "        params: params",
-        "    });\n",
+        "    var builder = new Nittro.DI.ContainerBuilder(" + JSON.stringify(config, null, 4).replace(/\n/g, "\n        ") + ");\n",
         "    this.di = builder.createContainer();",
         "    this.di.runServices();\n"
     );
 
     bootstrap.push(
-        "}, {",
-        "    DOM: 'Utils.DOM',",
-        "    Arrays: 'Utils.Arrays'",
         "});"
     );
 
