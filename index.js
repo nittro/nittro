@@ -366,7 +366,7 @@ Builder.prototype.buildBootstrap = function () {
     }
 
     bootstrap.push(
-        "    var builder = new Nittro.DI.ContainerBuilder(" + JSON.stringify(config, null, 4).replace(/\n/g, "\n        ") + ");\n",
+        "    var builder = new Nittro.DI.ContainerBuilder(" + JSON.stringify(config, null, 4).replace(/\n/g, "\n    ") + ");\n",
         "    this.di = builder.createContainer();",
         "    this.di.runServices();\n"
     );
