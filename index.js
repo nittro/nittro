@@ -341,11 +341,13 @@ Builder.prototype.buildBootstrap = function () {
 
     var config = {
         params: {},
-        extensions: getExtensions(this._.packages, this._.options.bowerDir)
+        extensions: getExtensions(this._.packages, this._.options.bowerDir),
+        services: {},
+        factories: {}
     };
 
     if (typeof this._.options.bootstrap === 'object') {
-        ['params', 'extensions'].forEach(function(section) {
+        ['params', 'extensions', 'services', 'factories'].forEach(function(section) {
             if (section in this._.options.bootstrap) {
                 for (var key in this._.options.bootstrap[section]) {
                     if (this._.options.bootstrap[section].hasOwnProperty(key)) {
