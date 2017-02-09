@@ -359,14 +359,6 @@ Builder.prototype.buildBootstrap = function () {
         }.bind(this));
     }
 
-    if (this._.packages.indexOf('nittro-extras-dialogs') > -1) {
-        bootstrap.push(
-            "    Nittro.Extras.Dialogs.Dialog.setDefaults({",
-            "        layer: document.body",
-            "    });\n"
-        );
-    }
-
     bootstrap.push(
         "    var builder = new Nittro.DI.ContainerBuilder(" + JSON.stringify(config, null, 4).replace(/\n/g, "\n    ") + ");\n",
         "    this.di = builder.createContainer();",

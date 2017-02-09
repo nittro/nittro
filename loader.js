@@ -1,1 +1,0 @@
-/* jahudka/minify compatible loader */
