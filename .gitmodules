@@ -1,3 +1,27 @@
 [submodule "Core"]
 	path = Core
 	url = https://github.com/nittro/core.git
+[submodule "DateTime"]
+	path = DateTime
+	url = https://github.com/nittro/datetime.git
+[submodule "Neon"]
+	path = Neon
+	url = https://github.com/nittro/neon.git
+[submodule "DI"]
+	path = DI
+	url = https://github.com/nittro/di.git
+[submodule "Ajax"]
+	path = Ajax
+	url = https://github.com/nittro/ajax.git
+[submodule "Routing"]
+	path = Routing
+	url = https://github.com/nittro/routing.git
+[submodule "Page"]
+	path = Page
+	url = https://github.com/nittro/page.git
+[submodule "Forms"]
+	path = Forms
+	url = https://github.com/nittro/forms.git
+[submodule "Flashes"]
+	path = Flashes
+	url = https://github.com/nittro/flashes.git
