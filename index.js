@@ -8,12 +8,12 @@ function normalizeOptions(options) {
         options.baseDir = process.cwd();
     }
 
-    if (!options.bowerDir) {
-        options.bowerDir = path.join(options.baseDir, 'bower_components');
+    if (!options.modulesDir) {
+        options.modulesDir = path.join(options.baseDir, 'node_modules');
     }
 
-    if (!fs.existsSync(options.bowerDir)) {
-        throw new Error('Bower dir "' + options.bowerDir + '" doesn\'t exist');
+    if (!fs.existsSync(options.modulesDir)) {
+        throw new Error('Node modules dir "' + options.modulesDir + '" doesn\'t exist');
     }
 
     'vendor' in options || (options.vendor = {});
@@ -45,13 +45,13 @@ function prefixPackages(packages, prefix) {
 
 }
 
-function buildPackageList(base, extras, bowerDir) {
+function buildPackageList(base, extras, modulesDir) {
     var pkg, packages = [];
 
     [base, extras].forEach(function(source) {
         for (pkg in source) {
             if (source.hasOwnProperty(pkg)) {
-                addPackageWithDependencies(packages, pkg, bowerDir);
+                addPackageWithDependencies(packages, pkg, modulesDir);
             }
         }
     });
@@ -60,12 +60,12 @@ function buildPackageList(base, extras, bowerDir) {
 
 }
 
-function addPackageWithDependencies(packages, pkg, bowerDir) {
-    var dependencies = getDependencies(pkg, bowerDir);
+function addPackageWithDependencies(packages, pkg, modulesDir) {
+    var dependencies = getDependencies(pkg, modulesDir);
 
     dependencies.forEach(function(dep) {
         if (packages.indexOf(dep) === -1) {
-            addPackageWithDependencies(packages, dep, bowerDir);
+            addPackageWithDependencies(packages, dep, modulesDir);
 
         }
     });
@@ -76,8 +76,8 @@ function addPackageWithDependencies(packages, pkg, bowerDir) {
 
 }
 
-function getDependencies(pkg, bowerDir) {
-    var meta = readBowerMeta(pkg, bowerDir),
+function getDependencies(pkg, modulesDir) {
+    var meta = readPackageMeta(pkg, modulesDir),
         dep, dependencies = [];
 
     if (!meta.dependencies) {
@@ -94,21 +94,21 @@ function getDependencies(pkg, bowerDir) {
 
 }
 
-var bowerCache = {},
+var pkgCache = {},
     nittroCache = {};
 
-function readBowerMeta(pkg, bowerDir) {
-    if (pkg in bowerCache) {
-        return bowerCache[pkg];
+function readPackageMeta(pkg, modulesDir) {
+    if (pkg in pkgCache) {
+        return pkgCache[pkg];
     }
 
-    return bowerCache[pkg] = JSON.parse(fs.readFileSync(path.join(bowerDir, pkg, 'bower.json')));
+    return pkgCache[pkg] = JSON.parse(fs.readFileSync(path.join(modulesDir, pkg, 'package.json')));
 
 }
 
-function readNittroMeta(pkg, bowerDir) {
+function readNittroMeta(pkg, modulesDir) {
     if (!(pkg in nittroCache)) {
-        var p = path.join(bowerDir, pkg, 'nittro.json');
+        var p = path.join(modulesDir, pkg, 'nittro.json');
 
         if (fs.existsSync(p)) {
             nittroCache[pkg] = JSON.parse(fs.readFileSync(p));
@@ -131,14 +131,14 @@ function formatFilePath(baseDir, file) {
     }
 }
 
-function getPackageFiles(pkg, bowerDir) {
-    var meta = readNittroMeta(pkg, bowerDir);
+function getPackageFiles(pkg, modulesDir) {
+    var meta = readNittroMeta(pkg, modulesDir);
 
     if (meta) {
         return meta.files;
 
     } else {
-        meta = readBowerMeta(pkg, bowerDir);
+        meta = readPackageMeta(pkg, modulesDir);
 
         return meta.main ? {
             js: [meta.main]
@@ -146,18 +146,18 @@ function getPackageFiles(pkg, bowerDir) {
     }
 }
 
-function getBridges(packages, bowerDir) {
+function getBridges(packages, modulesDir) {
     var bridges = [];
 
     packages.forEach(function(pkg) {
-        var meta = readNittroMeta(pkg, bowerDir),
+        var meta = readNittroMeta(pkg, modulesDir),
             dep;
 
         if (meta && meta.bridges) {
             for (dep in meta.bridges) {
                 if (meta.bridges.hasOwnProperty(dep) && packages.indexOf(dep) > -1 && meta.bridges[dep].files) {
                     meta.bridges[dep].files.forEach(function (file) {
-                        bridges.push(formatFilePath(bowerDir, pkg + '/' + file));
+                        bridges.push(formatFilePath(modulesDir, pkg + '/' + file));
 
                     });
                 }
@@ -169,11 +169,11 @@ function getBridges(packages, bowerDir) {
 
 }
 
-function getExtensions(packages, bowerDir) {
+function getExtensions(packages, modulesDir) {
     var extensions = {};
 
     packages.forEach(function(pkg) {
-        var meta = readNittroMeta(pkg, bowerDir),
+        var meta = readNittroMeta(pkg, modulesDir),
             dep, ext;
 
         if (meta && meta.bridges) {
@@ -199,7 +199,7 @@ function buildFileList(options, packages, type) {
         i, j, n;
 
     if (type === 'js' && packages.indexOf('nittro-forms') > -1) {
-        files.push(formatFilePath(options.bowerDir, 'nittro-forms/src/js/Nittro/Forms/Bridges/netteForms.js'));
+        files.push(formatFilePath(options.modulesDir, 'nittro-forms/src/Bridges/netteForms.js'));
     }
 
     type in options.vendor && options.vendor[type].forEach(function(file) {
@@ -207,17 +207,17 @@ function buildFileList(options, packages, type) {
     });
 
     packages.forEach(function(pkg) {
-        var pkgFiles = getPackageFiles(pkg, options.bowerDir);
+        var pkgFiles = getPackageFiles(pkg, options.modulesDir);
 
         if (type in pkgFiles) {
             pkgFiles[type].forEach(function(file) {
-                files.push(formatFilePath(options.bowerDir, pkg + '/' + file));
+                files.push(formatFilePath(options.modulesDir, pkg + '/' + file));
             });
         }
     });
 
     if (type === 'js') {
-        var bridges = getBridges(packages, options.bowerDir);
+        var bridges = getBridges(packages, options.modulesDir);
         files = files.concat(bridges);
 
     }
@@ -234,7 +234,7 @@ function buildFileList(options, packages, type) {
         }
 
         if (options.stack) {
-            files.push(formatFilePath(options.bowerDir, 'nittro-core/src/js/stack.js'));
+            files.push(formatFilePath(options.modulesDir, 'nittro-core/src/stack.js'));
         }
     }
 
@@ -272,7 +272,7 @@ function Builder(options) {
         compat: null
     };
 
-    this._.packages = buildPackageList(options.base, options.extras, options.bowerDir);
+    this._.packages = buildPackageList(options.base, options.extras, options.modulesDir);
 
 }
 
@@ -291,7 +291,7 @@ Builder.prototype.getFileList = function(type) {
 };
 
 Builder.prototype.getStackPath = function() {
-    return formatFilePath(this._.options.bowerDir, 'nittro-core/src/js/stack.js');
+    return formatFilePath(this._.options.modulesDir, 'nittro-core/src/stack.js');
 };
 
 Builder.prototype.getCompatFlags = function() {
@@ -299,7 +299,7 @@ Builder.prototype.getCompatFlags = function() {
         this._.compat = {};
 
         this._.packages.forEach(function(pkg) {
-            var meta = readNittroMeta(pkg, this._.options.bowerDir),
+            var meta = readNittroMeta(pkg, this._.options.modulesDir),
                 flag;
 
             if (meta && meta.compat) {
@@ -341,7 +341,7 @@ Builder.prototype.buildBootstrap = function () {
 
     var config = {
         params: {},
-        extensions: getExtensions(this._.packages, this._.options.bowerDir),
+        extensions: getExtensions(this._.packages, this._.options.modulesDir),
         services: {},
         factories: {}
     };
