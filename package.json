@@ -10,18 +10,18 @@
         "type": "git",
         "url": "https://github.com/nittro/nittro.git"
     },
-    "version": "2.0.0-rc.5",
+    "version": "2.0.0-rc.6",
     "main": "index.js",
     "files": [
         "index.js"
     ],
     "dependencies": {
-        "nittro-core": "^2.0.0-rc.4",
+        "nittro-core": "^2.0.0-rc.5",
         "nittro-datetime": "^2.0.0-rc.2",
         "nittro-neon": "^2.0.0-rc.2",
         "nittro-di": "^2.0.0-rc.2",
         "nittro-ajax": "^2.0.0-rc.1",
-        "nittro-forms": "^2.0.0-rc.2",
+        "nittro-forms": "^2.0.0-rc.3",
         "nittro-page": "^2.0.0-rc.3",
         "nittro-routing": "^2.0.0-rc.2",
         "nittro-flashes": "^2.0.0-rc.2"
