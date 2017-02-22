@@ -16,14 +16,14 @@
         "index.js"
     ],
     "dependencies": {
-        "nittro-core": "^2.0.0-rc.5",
+        "nittro-core": "^2.0.0-rc.7",
         "nittro-datetime": "^2.0.0-rc.2",
         "nittro-neon": "^2.0.0-rc.2",
         "nittro-di": "^2.0.0-rc.2",
-        "nittro-ajax": "^2.0.0-rc.1",
-        "nittro-forms": "^2.0.0-rc.5",
-        "nittro-page": "^2.0.0-rc.3",
+        "nittro-ajax": "^2.0.0-rc.4",
+        "nittro-forms": "^2.0.0-rc.10",
+        "nittro-page": "^2.0.0-rc.5",
         "nittro-routing": "^2.0.0-rc.2",
-        "nittro-flashes": "^2.0.0-rc.2"
+        "nittro-flashes": "^2.0.0-rc.3"
     }
 }
