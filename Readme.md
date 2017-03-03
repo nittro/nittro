@@ -1,18 +1,15 @@
 Nittro
-=======
+======
 
 Nittro is a javascript client-side framework and library specifically designed to be used with the [Nette framework](https://nette.org).
-
-#### Nittro renamed and cut up to pieces!
-Nittro used to be briefly known as NetteJS, but NetteJS is no more. It's only Nittro now. And it's been divided
-into more repositories. Independent packages, or rather packages with a uni-directional dependency chain, so
-you're always able to select the smallest package that will suit your needs, but you'll still be able to upgrade
-anytime.
+It makes your page fully AJAX-driven, taking care of basic things such as applying snippets to the page, updating the
+browser history, displaying transition animations while content is being loaded, client-side form validation, AJAX
+uploads, flash messages and more. The basics are pretty easy to set up and there are no outside dependencies (no jQuery
+for example).
 
 The documentation is [right this way](https://github.com/nittro/nittro/wiki).
 
-**Beware**, Nittro isn't yet 100% production ready. Only a part of the codebase is covered by tests
-and **there may be bugs**. It's also part of the reason we're not sticking to Semver for now: any commit
-can break things, any commit can fix bugs that your code relied on. So if you use Nittro at this point at all,
-be sure to be vary of upgrades. Once we reach at least some semblance of a 100% coverage and finalise the API,
-version 2.0 will be released and from then on it's Semver as usual.
+You can get a pre-built Nittro package from the [website](https://www.nittro.org/download) or using Bower
+(`bower install --save nittro-essentials` or `bower install --save nittro-full`) or you can get the source packages
+from NPM (`npm install --save nittro` and optionally `nittro-extras`) and build it yourself using 
+the [Gulp](https://github.com/nittro/gulp) or [Grunt](https://github.com/nittro/grunt) plugin.
