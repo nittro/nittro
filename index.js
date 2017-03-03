@@ -1,19 +1,24 @@
 var fs = require('fs'),
-    path = require('path');
+    path = require('path'),
+    extras;
+
+
+try {
+    extras = require('nittro-extras');
+} catch (e) {
+    extras = {
+        resolve: function(path) {
+            return require.resolve(path);
+        }
+    };
+}
+
 
 function normalizeOptions(options) {
     options || (options = {});
 
     if (!options.baseDir) {
         options.baseDir = process.cwd();
-    }
-
-    if (!options.modulesDir) {
-        options.modulesDir = path.join(options.baseDir, 'node_modules');
-    }
-
-    if (!fs.existsSync(options.modulesDir)) {
-        throw new Error('Node modules dir "' + options.modulesDir + '" doesn\'t exist');
     }
 
     'vendor' in options || (options.vendor = {});
@@ -45,13 +50,21 @@ function prefixPackages(packages, prefix) {
 
 }
 
-function buildPackageList(base, extras, modulesDir) {
+function resolvePath(path) {
+    if (/^nittro-extras-/.test(path)) {
+        return extras.resolve(path);
+    } else {
+        return require.resolve(path);
+    }
+}
+
+function buildPackageList(base, extras) {
     var pkg, packages = [];
 
     [base, extras].forEach(function(source) {
         for (pkg in source) {
             if (source.hasOwnProperty(pkg)) {
-                addPackageWithDependencies(packages, pkg, modulesDir);
+                addPackageWithDependencies(packages, pkg);
             }
         }
     });
@@ -60,13 +73,12 @@ function buildPackageList(base, extras, modulesDir) {
 
 }
 
-function addPackageWithDependencies(packages, pkg, modulesDir) {
-    var dependencies = getDependencies(pkg, modulesDir);
+function addPackageWithDependencies(packages, pkg) {
+    var dependencies = getDependencies(pkg);
 
     dependencies.forEach(function(dep) {
         if (packages.indexOf(dep) === -1) {
-            addPackageWithDependencies(packages, dep, modulesDir);
-
+            addPackageWithDependencies(packages, dep);
         }
     });
 
@@ -76,8 +88,8 @@ function addPackageWithDependencies(packages, pkg, modulesDir) {
 
 }
 
-function getDependencies(pkg, modulesDir) {
-    var meta = readPackageMeta(pkg, modulesDir),
+function getDependencies(pkg) {
+    var meta = readPackageMeta(pkg),
         dep, dependencies = [];
 
     if (!meta.dependencies) {
@@ -97,22 +109,21 @@ function getDependencies(pkg, modulesDir) {
 var pkgCache = {},
     nittroCache = {};
 
-function readPackageMeta(pkg, modulesDir) {
+function readPackageMeta(pkg) {
     if (pkg in pkgCache) {
         return pkgCache[pkg];
     }
 
-    return pkgCache[pkg] = JSON.parse(fs.readFileSync(path.join(modulesDir, pkg, 'package.json')));
+    return pkgCache[pkg] = JSON.parse(fs.readFileSync(resolvePath(pkg + '/package.json')));
 
 }
 
-function readNittroMeta(pkg, modulesDir) {
+function readNittroMeta(pkg) {
     if (!(pkg in nittroCache)) {
-        var p = path.join(modulesDir, pkg, 'nittro.json');
-
-        if (fs.existsSync(p)) {
+        try {
+            var p = resolvePath(pkg + '/nittro.json');
             nittroCache[pkg] = JSON.parse(fs.readFileSync(p));
-        } else {
+        } catch (e) {
             nittroCache[pkg] = null;
         }
     }
@@ -131,14 +142,14 @@ function formatFilePath(baseDir, file) {
     }
 }
 
-function getPackageFiles(pkg, modulesDir) {
-    var meta = readNittroMeta(pkg, modulesDir);
+function getPackageFiles(pkg) {
+    var meta = readNittroMeta(pkg);
 
     if (meta) {
         return meta.files;
 
     } else {
-        meta = readPackageMeta(pkg, modulesDir);
+        meta = readPackageMeta(pkg);
 
         return meta.main ? {
             js: [meta.main]
@@ -146,18 +157,18 @@ function getPackageFiles(pkg, modulesDir) {
     }
 }
 
-function getBridges(packages, modulesDir) {
+function getBridges(packages) {
     var bridges = [];
 
     packages.forEach(function(pkg) {
-        var meta = readNittroMeta(pkg, modulesDir),
+        var meta = readNittroMeta(pkg),
             dep;
 
         if (meta && meta.bridges) {
             for (dep in meta.bridges) {
                 if (meta.bridges.hasOwnProperty(dep) && packages.indexOf(dep) > -1 && meta.bridges[dep].files) {
                     meta.bridges[dep].files.forEach(function (file) {
-                        bridges.push(formatFilePath(modulesDir, pkg + '/' + file));
+                        bridges.push(resolvePath(pkg + '/' + file));
 
                     });
                 }
@@ -169,11 +180,11 @@ function getBridges(packages, modulesDir) {
 
 }
 
-function getExtensions(packages, modulesDir) {
+function getExtensions(packages) {
     var extensions = {};
 
     packages.forEach(function(pkg) {
-        var meta = readNittroMeta(pkg, modulesDir),
+        var meta = readNittroMeta(pkg),
             dep, ext;
 
         if (meta && meta.bridges) {
@@ -199,7 +210,7 @@ function buildFileList(options, packages, type) {
         i, j, n;
 
     if (type === 'js' && packages.indexOf('nittro-forms') > -1) {
-        files.push(formatFilePath(options.modulesDir, 'nittro-forms/src/Bridges/netteForms.js'));
+        files.push(require.resolve('nittro-forms/src/Bridges/netteForms.js'));
     }
 
     type in options.vendor && options.vendor[type].forEach(function(file) {
@@ -207,19 +218,18 @@ function buildFileList(options, packages, type) {
     });
 
     packages.forEach(function(pkg) {
-        var pkgFiles = getPackageFiles(pkg, options.modulesDir);
+        var pkgFiles = getPackageFiles(pkg);
 
         if (type in pkgFiles) {
             pkgFiles[type].forEach(function(file) {
-                files.push(formatFilePath(options.modulesDir, pkg + '/' + file));
+                files.push(resolvePath(pkg + '/' + file));
             });
         }
     });
 
     if (type === 'js') {
-        var bridges = getBridges(packages, options.modulesDir);
+        var bridges = getBridges(packages);
         files = files.concat(bridges);
-
     }
 
     type in options.libraries && options.libraries[type].forEach(function(file) {
@@ -234,7 +244,7 @@ function buildFileList(options, packages, type) {
         }
 
         if (options.stack) {
-            files.push(formatFilePath(options.modulesDir, 'nittro-core/src/stack.js'));
+            files.push(require.resolve('nittro-core/src/stack.js'));
         }
     }
 
@@ -272,7 +282,7 @@ function Builder(options) {
         compat: null
     };
 
-    this._.packages = buildPackageList(options.base, options.extras, options.modulesDir);
+    this._.packages = buildPackageList(options.base, options.extras);
 
 }
 
@@ -291,7 +301,7 @@ Builder.prototype.getFileList = function(type) {
 };
 
 Builder.prototype.getStackPath = function() {
-    return formatFilePath(this._.options.modulesDir, 'nittro-core/src/stack.js');
+    return require.resolve('nittro-core/src/stack.js');
 };
 
 Builder.prototype.getCompatFlags = function() {
@@ -299,12 +309,12 @@ Builder.prototype.getCompatFlags = function() {
         this._.compat = {};
 
         this._.packages.forEach(function(pkg) {
-            var meta = readNittroMeta(pkg, this._.options.modulesDir),
+            var meta = readNittroMeta(pkg),
                 flag;
 
             if (meta && meta.compat) {
                 for (flag in meta.compat) {
-                    if (meta.compat[flag]) {
+                    if (meta.compat.hasOwnProperty(flag) && meta.compat[flag]) {
                         this._.compat[flag] || (this._.compat[flag] = []);
                         this._.compat[flag].push(pkg);
 
@@ -334,14 +344,10 @@ Builder.prototype.buildCss = function() {
     }).join("\n");
 };
 
-Builder.prototype.buildBootstrap = function () {
-    var bootstrap = [
-        "_context.invoke(function(Nittro) {"
-    ];
-
+Builder.prototype.getContainerBuilderConfig = function () {
     var config = {
         params: {},
-        extensions: getExtensions(this._.packages, this._.options.modulesDir),
+        extensions: getExtensions(this._.packages),
         services: {},
         factories: {}
     };
@@ -358,6 +364,16 @@ Builder.prototype.buildBootstrap = function () {
             }
         }.bind(this));
     }
+
+    return config;
+};
+
+Builder.prototype.buildBootstrap = function () {
+    var bootstrap = [
+        "_context.invoke(function(Nittro) {"
+    ];
+
+    var config = this.getContainerBuilderConfig();
 
     bootstrap.push(
         "    var builder = new Nittro.DI.ContainerBuilder(" + JSON.stringify(config, null, 4).replace(/\n/g, "\n    ") + ");\n",
