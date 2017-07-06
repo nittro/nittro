@@ -16,7 +16,7 @@
     "index.js"
   ],
   "dependencies": {
-    "nittro-core": "^2.0.1",
+    "nittro-core": "^2.0.2",
     "nittro-datetime": "^2.0.0",
     "nittro-neon": "^2.0.0",
     "nittro-di": "^2.0.0",
