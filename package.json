@@ -16,12 +16,12 @@
     "index.js"
   ],
   "dependencies": {
-    "nittro-core": "^2.0.4",
+    "nittro-core": "^2.0.5",
     "nittro-datetime": "^2.0.0",
     "nittro-neon": "^2.0.0",
     "nittro-di": "^2.0.0",
     "nittro-ajax": "^2.0.1",
-    "nittro-forms": "^2.0.3",
+    "nittro-forms": "^2.0.4",
     "nittro-page": "^2.0.8",
     "nittro-routing": "^2.0.0",
     "nittro-flashes": "^2.0.0"
