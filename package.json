@@ -20,9 +20,9 @@
     "nittro-datetime": "^2.0.0",
     "nittro-neon": "^2.0.0",
     "nittro-di": "^2.0.0",
-    "nittro-ajax": "^2.0.1",
+    "nittro-ajax": "^2.0.2",
     "nittro-forms": "^2.0.5",
-    "nittro-page": "^2.0.10",
+    "nittro-page": "^2.0.11",
     "nittro-routing": "^2.0.0",
     "nittro-flashes": "^2.0.0"
   }
