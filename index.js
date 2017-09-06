@@ -263,6 +263,22 @@ function buildFileList(options, packages, type) {
 }
 
 
+function cloneObj(obj) {
+    if (Array.isArray(obj)) {
+        return obj.slice().map(cloneObj);
+    } else if (typeof obj !== 'object' || !obj) {
+        return obj;
+    }
+
+    var c = {},
+        prop;
+
+    for (prop in obj) if (obj.hasOwnProperty(prop)) {
+        c[prop] = cloneObj(obj[prop]);
+    }
+
+    return c;
+}
 
 
 function Builder(options) {
@@ -271,7 +287,7 @@ function Builder(options) {
 
     }
 
-    options = normalizeOptions(options);
+    options = normalizeOptions(cloneObj(options));
 
     this._ = {
         options: options,
@@ -296,8 +312,7 @@ Builder.prototype.getFileList = function(type) {
 
     }
 
-    return this._.fileList[type];
-
+    return this._.fileList[type].slice();
 };
 
 Builder.prototype.getStackPath = function() {
@@ -324,7 +339,7 @@ Builder.prototype.getCompatFlags = function() {
         }.bind(this));
     }
 
-    return this._.compat;
+    return cloneObj(this._.compat);
 };
 
 
@@ -357,7 +372,7 @@ Builder.prototype.getContainerBuilderConfig = function () {
             if (section in this._.options.bootstrap) {
                 for (var key in this._.options.bootstrap[section]) {
                     if (this._.options.bootstrap[section].hasOwnProperty(key)) {
-                        config[section][key] = this._.options.bootstrap[section][key];
+                        config[section][key] = cloneObj(this._.options.bootstrap[section][key]);
 
                     }
                 }
