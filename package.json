@@ -22,7 +22,7 @@
     "nittro-di": "^2.0.0",
     "nittro-ajax": "^2.0.5",
     "nittro-forms": "^2.0.8",
-    "nittro-page": "^2.0.17",
+    "nittro-page": "^2.0.18",
     "nittro-routing": "^2.0.0",
     "nittro-flashes": "^2.0.0"
   }
